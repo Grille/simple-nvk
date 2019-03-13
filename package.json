@@ -1,0 +1,9 @@
+{
+  "name": "nvk-mandelbrot",
+  "version": "0.0.1",
+  "dependencies": {
+    "nvk": "^0.3.6"
+  },
+  "author": "paul hirch",
+  "license": "MIT"
+}
