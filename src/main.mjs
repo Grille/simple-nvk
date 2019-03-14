@@ -5,17 +5,34 @@ Object.assign(global,nvk);
 
 let appInfo = new VkApplicationInfo();
 appInfo.pApplicationName = "NVK Mandelbrot"
-appInfo.applicationVersion = VK_MAKE_VERSION(0,0,1);
-appInfo.apiVersion = VK_MAKE_VERSION(1,0,101);
+appInfo.applicationVersion = VK_MAKE_VERSION(1,0,0);
+appInfo.pEngineName = "engine";
+appInfo.engineVersion = VK_MAKE_VERSION(1,0,0);;
+appInfo.apiVersion = VK_MAKE_VERSION(1,0,0);
+
+let layersCount = {$:0};
+vkEnumerateInstanceLayerProperties(layersCount,null)
+let layers = new InitializedArray(VkLayerProperties,layersCount.$)
+vkEnumerateInstanceLayerProperties(layersCount,layers)
+for (let i = 0;i<layersCount.$;i++){
+    console.log("layer <"+i+">");
+    console.log("name       : "+ layers[i].layerName);
+}
+
+let validationLayers = ["VK_LAYER_LUNARG_standard_validation"]
 
 let instanceInfo = new VkInstanceCreateInfo();
 instanceInfo.pApplicationinfo = appInfo;
-instanceInfo.enabledLayerCount = 0;
+//instanceInfo.enabledLayerCount = 0;
 instanceInfo.enabledExtensionCount = 0;
+instanceInfo.enabledLayerCount = validationLayers.length;
+instanceInfo.ppEnabledLayersNames = validationLayers;
 
 let instance = new VkInstance();
+console.log("god");
 if(vkCreateInstance(instanceInfo,null,instance)!==VK_SUCCESS)
     console.error("vkCreateInstance failed");
+console.log("why???");
 
 let physDevicesCount = {$:0};
 vkEnumeratePhysicalDevices(instance,physDevicesCount,null);
