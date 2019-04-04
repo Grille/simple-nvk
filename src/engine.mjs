@@ -9,6 +9,7 @@ export default class Engine{
         this.device;
         this.window;
         this.surface;
+        this.swapchain;
     }
 }
 
@@ -80,11 +81,13 @@ Engine.prototype.startVulkan = function() {
     let usedFeatures = new VkPhysicalDeviceFeatures({
 
     });
-
+    let deviceExtensions = ["VK_KHR_swapchain"]
     let deviceCreateInfo = new VkDeviceCreateInfo();
     deviceCreateInfo.queueCreateInfoCount = 1;
     deviceCreateInfo.pQueueCreateInfos = [deviceQueueInfo];
     deviceCreateInfo.pEnabledFeatures = usedFeatures;
+    deviceCreateInfo.enabledExtensionCount = deviceExtensions.length;
+    deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions;
 
     this.device = new VkDevice();
     if (vkCreateDevice(physDevices[0], deviceCreateInfo, null, this.device) !== VK_SUCCESS)
@@ -92,9 +95,46 @@ Engine.prototype.startVulkan = function() {
 
     let queue = new VkQueue();
     vkGetDeviceQueue(this.device, 0, 0, queue);
+
+    let surfaceSupport = {$:false};
+    vkGetPhysicalDeviceSurfaceSupportKHR(physDevices[0],0,this.surface,surfaceSupport);
+    console.log("surfaceSupport: "+surfaceSupport.$);
+
+    let surfaceCapabilities = new VkSurfaceCapabilitiesKHR()
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physDevices[0],this.surface,surfaceCapabilities);
+
+    let surfaceFormatCount = {$:0};
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physDevices[0],this.surface,surfaceFormatCount,null);
+    let surfaceFormats = new InitializedArray(VkSurfaceFormatKHR, surfaceFormatCount.$);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physDevices[0],this.surface,surfaceFormatCount,surfaceFormats);
+    console.log(surfaceFormats.length);
+    for (let i = 0;i<surfaceFormats.length;i++)
+        console.log(surfaceFormats[i].format);
+
+    let swapchainCreateInfo = new VkSwapchainCreateInfoKHR();
+    swapchainCreateInfo.surface = this.surface;
+    swapchainCreateInfo.minImageCount = 2;
+    swapchainCreateInfo.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
+    swapchainCreateInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+    swapchainCreateInfo.imageExtent = new VkExtent2D({width:480,height:320});
+    swapchainCreateInfo.imageArrayLayers = 1;
+    swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchainCreateInfo.queueFamilyIndexCount = 0;
+    swapchainCreateInfo.pQueueFamilyIndices = null;
+    swapchainCreateInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    swapchainCreateInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    swapchainCreateInfo.clipped = true;
+    swapchainCreateInfo.oldSwapchain = null;
+
+    this.swapchain = new VkSwapchainKHR();
+    vkCreateSwapchainKHR(this.device,swapchainCreateInfo,null,this.swapchain);
 }
 Engine.prototype.shutdownVulkan = function() {
     vkDeviceWaitIdle(this.device);
+
+    vkDestroySwapchainKHR(this.device,this.swapchain,null);
     vkDestroyDevice(this.device, null);
     vkDestroySurfaceKHR(this.instance,this.surface,null);
     vkDestroyInstance(this.instance, null);
