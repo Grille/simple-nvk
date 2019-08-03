@@ -1,3 +1,4 @@
+import fs from "fs"
 import nvk from "nvk"
 import { InitializedArray } from "./utils.mjs"
 
@@ -11,10 +12,12 @@ export default class Engine {
     this.surface = null;
     this.swapchain = null;
     this.imageViews = [];
+    this.shaderModules = [];
+    this.pipelineLayout = null;
   }
 }
 
-Engine.prototype.assertVulkan = function (code) {
+let assertVulkan = function (code) {
   if (code !== VK_SUCCESS)
     console.error("vulkan error");
 }
@@ -22,7 +25,7 @@ Engine.prototype.startVulkan = function () {
   this.instance = new VkInstance();
   this.window = new VulkanWindow({ width: 480, height: 320, title: "NVK Mandelbrot" });
   this.surface = new VkSurfaceKHR();
-
+  
   let validationLayers = ["VK_LAYER_LUNARG_standard_validation"]
   let extensions = [...this.window.getRequiredInstanceExtensions()];
   let result = 0;
@@ -172,6 +175,137 @@ Engine.prototype.startVulkan = function () {
     vkCreateImageView(this.device, imageViewCreateInfo, null, this.imageViews[i]);
   }
 
+  let shaderVert = fs.readFileSync("./vert.spv");
+  let shaderFrag = fs.readFileSync("./frag.spv");
+
+  let shaderModuleVert = this.createShaderModule(shaderVert);
+  let shaderModuleFrag = this.createShaderModule(shaderFrag);
+
+  let shaderStageCreateInfoVert = new VkPipelineShaderStageCreateInfo({
+    stage: VK_SHADER_STAGE_VERTEX_BIT,
+    module: shaderModuleVert,
+    pName: "main",
+    pSpecializationInfo: null,
+  });
+  let shaderStageCreateInfoFrag = new VkPipelineShaderStageCreateInfo({
+    stage: VK_SHADER_STAGE_FRAGMENT_BIT,
+    module: shaderModuleFrag,
+    pName: "main",
+    pSpecializationInfo: null,
+  });
+
+  let shaderStageInfos = [
+    shaderStageCreateInfoVert,
+    shaderStageCreateInfoFrag,
+  ]
+
+  let vertexInputCreateInfo = new VkPipelineVertexInputStateCreateInfo({});
+
+  let inputAssemblyCreateInfo = new VkPipelineInputAssemblyStateCreateInfo({
+    topology: VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    primitiveRestartEnabled: false,
+  });
+
+  let viewport = new VkViewport({
+    x:0,
+    y:0,
+    width:480,
+    height:320,
+    minDepth:0,
+    maxDepth:1,
+  })
+
+  let scissor = new VkRect2D({
+    offset: new VkOffset2D({ x: 0, y: 0 }),
+    extent: new VkExtent2D({ width: 480, height: 320 }),
+  });
+
+  let pipelineViewportCreateInfo = new VkPipelineViewportStateCreateInfo({
+    viewportCount: 1,
+    pViewport: [viewport],
+    scissorCount: 1,
+    pScissor: [scissor],
+  });
+
+  let rasterizationCreateInfo = new VkPipelineRasterizationStateCreateInfo({
+    depthClampEnable:false,
+    rasterizerDiscardEnable:false,
+    polygonMode: VK_POLYGON_MODE_FILL,
+    cullMode: VK_CULL_MODE_BACK_BIT,
+    frontFace: VK_FRONT_FACE_CLOCKWISE,
+    lineWidth: 1,
+  });
+
+  let multisampleCreateInfo = new VkPipelineMultisampleStateCreateInfo({
+    rasterizationSamples: VK_SAMPLE_COUNT_1_BIT,
+    sampleShadingEnable: false,
+    minSampleShading: 1,
+    pSampleMask: null,
+    alphaToCoverageEnable: false,
+    alphaToOneEnable: false,
+  });
+
+  let colorBlendAttachmentState = new VkPipelineColorBlendAttachmentState({
+    blendEnable: true,
+    srcColorBlendFactor: VK_BLEND_FACTOR_SRC_ALPHA,
+    dstColorBlendFactor: VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+    colorBlendOp: VK_BLEND_OP_ADD,
+    srcAlphaBlendFactor: VK_BLEND_FACTOR_ONE,
+    dstAlphaBlendFactor: VK_BLEND_FACTOR_ZERO,
+    alphaBlendOp: VK_BLEND_OP_ADD,
+    colorWriteMask: VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+  });
+
+  let colorBlendStateCreateInfo = new VkPipelineColorBlendStateCreateInfo({
+    logicOpEnable: false,
+    logicOp: VK_LOGIC_OP_NO_OP,
+    attachmentCount: 1,
+    pAttachments: [colorBlendAttachmentState],
+  });
+
+  let layoutCreateInfo = new VkPipelineLayoutCreateInfo({
+    setLayoutCount: 0,
+    pSetLayout: null,
+    pushConstantRangeCount: 0,
+    pPushConstantRanges: null,
+  });
+
+  this.pipelineLayout = new VkPipelineLayout();
+  result = vkCreatePipelineLayout(this.device, layoutCreateInfo, null, this.pipelineLayout);
+  assertVulkan(result);
+
+  //VK_FORMAT_B8G8R8A8_UNORM
+  let attachmentDescription = new VkAttachmentDescription({
+    flags: 0,
+    format: VK_FORMAT_B8G8R8A8_UNORM,
+    samples: VK_SAMPLE_COUNT_1_BIT,
+    loadOp: VK_ATTACHMENT_LOAD_OP_CLEAR,
+    storeOp: VK_ATTACHMENT_STORE_OP_STORE,
+    stencilLoadOp: VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+    stencilStoreOp: VK_ATTACHMENT_STORE_OP_DONT_CARE,
+    initialLayout: VK_IMAGE_LAYOUT_UNDEFINED,
+    finalLayout: VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+  });
+
+  let attachmentReference = new VkAttachmentReference({
+    attachment: 0,
+    layout: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+  })
+}
+
+Engine.prototype.createShaderModule = function(code){
+  let uIntCode = new Uint8Array(code);
+  let shaderModuleCreateInfo = new VkShaderModuleCreateInfo({
+    codeSize: uIntCode.length,
+    pCode: uIntCode,
+  });
+
+  let shaderModule = new VkShaderModule();
+  let result = vkCreateShaderModule(this.device, shaderModuleCreateInfo, null, shaderModule)
+  if (result !== VK_SUCCESS)
+    console.error("vkCreateShaderModule Error");
+  this.shaderModules[this.shaderModules.length] = shaderModule;
+  return shaderModule;
 }
 
 Engine.prototype.shutdownVulkan = function () {
@@ -179,6 +313,10 @@ Engine.prototype.shutdownVulkan = function () {
 
   for (let i = 0; i < this.imageViews.length; i++) {
     vkDestroyImageView(this.device, this.imageViews[i], null);
+  }
+  vkDestroyPipelineLayout(this.device, this.pipelineLayout, null);
+  for (let i = 0; i < this.shaderModules.length; i++) {
+    vkDestroyShaderModule(this.device, this.shaderModules[i], null);
   }
   vkDestroySwapchainKHR(this.device, this.swapchain, null);
   vkDestroyDevice(this.device, null);
