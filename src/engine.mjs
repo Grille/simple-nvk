@@ -26,10 +26,10 @@ export default class Engine {
   }
 }
 
-let assertVulkan = function (code) {
-  if (code !== VK_SUCCESS)
-    console.error("vulkan error");
-}
+function ASSERT_VK_RESULT(result) {
+  if (result !== VK_SUCCESS) throw new Error(`Vulkan assertion failed!`);
+};
+
 Engine.prototype.startVulkan = function () {
   this.instance = new VkInstance();
   this.window = new VulkanWindow({ width: 480, height: 320, title: "NVK Mandelbrot" });
@@ -58,8 +58,8 @@ Engine.prototype.startVulkan = function () {
   instanceInfo.ppEnabledExtensionNames = extensions;
 
 
-  if (vkCreateInstance(instanceInfo, null, this.instance) !== VK_SUCCESS)
-    console.error("vkCreateInstance failed");
+  result = vkCreateInstance(instanceInfo, null, this.instance)
+  ASSERT_VK_RESULT(result);
   //vkGetInstanceProcAddr(instance,"vkk_surface");
 
   if (this.window.createSurface(this.instance, null, this.surface) !== 0)
@@ -109,8 +109,8 @@ Engine.prototype.startVulkan = function () {
 
 
   this.device = new VkDevice();
-  if (vkCreateDevice(physicalDevice, deviceCreateInfo, null, this.device) !== VK_SUCCESS)
-    console.error("vkCreateDevice failed");
+  result = vkCreateDevice(physicalDevice, deviceCreateInfo, null, this.device);
+  ASSERT_VK_RESULT(result);
 
   let queue = new VkQueue();
   vkGetDeviceQueue(this.device, 0, 0, queue);
@@ -209,7 +209,7 @@ Engine.prototype.startVulkan = function () {
   viewport.width = 480;
   viewport.height = 320;
   viewport.minDepth = 0;
-  viewport.maxDepth = 1
+  viewport.maxDepth = 1;
   
   let scissor = new VkRect2D();
   scissor.offset.x = 0;
@@ -217,13 +217,11 @@ Engine.prototype.startVulkan = function () {
   scissor.extent.width = 480;
   scissor.extent.height = 320;
 
-  let viewports = new InitializedArray(VkViewport, 1);
-
   let viewportCreateInfo = new VkPipelineViewportStateCreateInfo();
-  viewportCreateInfo.viewportCount = viewports.length;
-  viewportCreateInfo.pViewport = viewports;
+  viewportCreateInfo.viewportCount = 1;
+  viewportCreateInfo.pViewports = [viewport];
   viewportCreateInfo.scissorCount = 1;
-  viewportCreateInfo.pScissor = [scissor];
+  viewportCreateInfo.pScissors = [scissor];
 
   let rasterizationCreateInfo = new VkPipelineRasterizationStateCreateInfo();
   rasterizationCreateInfo.depthClampEnable = false;
@@ -256,17 +254,16 @@ Engine.prototype.startVulkan = function () {
   colorBlendStateCreateInfo.logicOp = VK_LOGIC_OP_NO_OP;
   colorBlendStateCreateInfo.attachmentCount = 1;
   colorBlendStateCreateInfo.pAttachments = [colorBlendAttachmentState];
+  //colorBlendStateCreateInfo.blendConstants = [0.0, 0.0, 0.0, 0.0];
 
-  let layoutCreateInfo = new VkPipelineLayoutCreateInfo();
-  layoutCreateInfo.setLayoutCount = 0;
-  layoutCreateInfo.pSetLayout = null;
-  layoutCreateInfo.pushConstantRangeCount = 0;
-  layoutCreateInfo.pPushConstantRanges = null;
+  let pipelineLayoutInfo = new VkPipelineLayoutCreateInfo();
+  pipelineLayoutInfo.setLayoutCount = 0;
+  pipelineLayoutInfo.pushConstantRangeCount = 0;
 
 
   this.pipelineLayout = new VkPipelineLayout();
-  result = vkCreatePipelineLayout(this.device, layoutCreateInfo, null, this.pipelineLayout);
-  assertVulkan(result);
+  result = vkCreatePipelineLayout(this.device, pipelineLayoutInfo, null, this.pipelineLayout);
+  ASSERT_VK_RESULT(result);
 
   //VK_FORMAT_B8G8R8A8_UNORM
   let attachmentDescription = new VkAttachmentDescription();
@@ -309,10 +306,11 @@ Engine.prototype.startVulkan = function () {
   dynamicStateCreateInfo.pDynamicStates = null;//new Int32Array([VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR]),
 
   this.renderPass = new VkRenderPass();
-  vkCreateRenderPass(this.device, renderPassCreateInfo, null, this.renderPass);
+  result = vkCreateRenderPass(this.device, renderPassCreateInfo, null, this.renderPass);
+  ASSERT_VK_RESULT(result);
 
   let graphicsPipelineCreateInfo = new VkGraphicsPipelineCreateInfo();
-  graphicsPipelineCreateInfo.stageCount = 2;
+  graphicsPipelineCreateInfo.stageCount = shaderStageInfos.length;
   graphicsPipelineCreateInfo.pStages = shaderStageInfos;
   graphicsPipelineCreateInfo.pVertexInputState = vertexInputCreateInfo;
   graphicsPipelineCreateInfo.pInputAssemblyState = inputAssemblyCreateInfo;
@@ -330,7 +328,8 @@ Engine.prototype.startVulkan = function () {
   graphicsPipelineCreateInfo.basePipelineIndex = -1;
 
   this.pipeline = new VkPipeline();
-  vkCreateGraphicsPipelines(this.device, null, 1, [graphicsPipelineCreateInfo], null, [this.pipeline]);
+  result = vkCreateGraphicsPipelines(this.device, null, 1, [graphicsPipelineCreateInfo], null, [this.pipeline]);
+  ASSERT_VK_RESULT(result);
 
   this.framebuffers = new InitializedArray(VkFramebuffer, this.swapImageViews.length);
   for (let i = 0; i < this.swapImageViews.length; i++) {
@@ -342,14 +341,16 @@ Engine.prototype.startVulkan = function () {
     framebufferCreateInfo.height = 320;
     framebufferCreateInfo.layers = 1;
 
-    vkCreateFramebuffer(this.device, framebufferCreateInfo, null, this.framebuffers[i]);
+    result = vkCreateFramebuffer(this.device, framebufferCreateInfo, null, this.framebuffers[i]);
+    ASSERT_VK_RESULT(result);
   }
 
   let commandPoolCreateInfo = new VkCommandPoolCreateInfo();
   commandPoolCreateInfo.queueFamilyIndex = queueFamily;
 
   this.commandPool = new VkCommandPool();
-  vkCreateCommandPool(this.device, commandPoolCreateInfo, null, this.commandPool);
+  result = vkCreateCommandPool(this.device, commandPoolCreateInfo, null, this.commandPool);
+  ASSERT_VK_RESULT(result);
 
   let commandBufferAllocateInfo = new VkCommandBufferAllocateInfo();
   commandBufferAllocateInfo.commandPool = this.commandPool;
@@ -357,7 +358,8 @@ Engine.prototype.startVulkan = function () {
   commandBufferAllocateInfo.commandBufferCount = this.swapImageViews.length;
 
   this.commandBuffers = new InitializedArray(VkCommandBuffer, this.swapImageViews.length);
-  vkAllocateCommandBuffers(this.device, commandBufferAllocateInfo, this.commandBuffers);
+  result = vkAllocateCommandBuffers(this.device, commandBufferAllocateInfo, this.commandBuffers);
+  ASSERT_VK_RESULT(result);
 
   let commandBufferBeginInfo = new VkCommandBufferBeginInfo();
   commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -365,7 +367,8 @@ Engine.prototype.startVulkan = function () {
 
   for (let i = 0; i < this.swapImageViews.length; i++) {
     let cmdBuffer = this.commandBuffers[i];
-    vkBeginCommandBuffer(cmdBuffer, commandBufferBeginInfo);
+    result = vkBeginCommandBuffer(cmdBuffer, commandBufferBeginInfo);
+    ASSERT_VK_RESULT(result);
 
     let renderPassBeginInfo = new VkRenderPassBeginInfo();
     renderPassBeginInfo.renderPass = this.renderPass;
@@ -391,7 +394,8 @@ Engine.prototype.startVulkan = function () {
 
     vkCmdEndRenderPass(cmdBuffer);
 
-    vkEndCommandBuffer(cmdBuffer);
+    result = vkEndCommandBuffer(cmdBuffer);
+    ASSERT_VK_RESULT(result);
   }
 
   /*
@@ -416,8 +420,8 @@ Engine.prototype.createShaderModule = function (code) {
 
   let shaderModule = new VkShaderModule();
   let result = vkCreateShaderModule(this.device, shaderModuleCreateInfo, null, shaderModule)
-  if (result !== VK_SUCCESS)
-    console.error("vkCreateShaderModule Error");
+  ASSERT_VK_RESULT(result);
+
   this.shaderModules[this.shaderModules.length] = shaderModule;
   return shaderModule;
 }
