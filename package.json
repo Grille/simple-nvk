@@ -1,8 +1,11 @@
 {
   "name": "nvk-mandelbrot",
   "version": "0.0.1",
+  "scripts": {
+    "start": "node --experimental-modules ./src/program.mjs --vkversion=1.1.114"
+  },
   "dependencies": {
-    "nvk": "^0.3.6"
+    "nvk": "latest"
   },
   "author": "paul hirch",
   "license": "MIT"

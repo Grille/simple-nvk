@@ -1,1 +1,0 @@
-start cmd /k "echo node --experimental-modules program.mjs --vkversion=1.1.101 & cd src & node --experimental-modules program.mjs --vkversion=1.1.101"
