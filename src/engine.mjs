@@ -5,14 +5,19 @@ Object.assign(global, nvk);
 
 export default class Engine {
   constructor() {
-    this.instance;
-    this.device;
-    this.window;
-    this.surface;
-    this.swapchain;
+    this.instance = null;
+    this.device = null;
+    this.window = null;
+    this.surface = null;
+    this.swapchain = null;
+    this.imageViews = [];
   }
 }
 
+Engine.prototype.assertVulkan = function (code) {
+  if (code !== VK_SUCCESS)
+    console.error("vulkan error");
+}
 Engine.prototype.startVulkan = function () {
   this.instance = new VkInstance();
   this.window = new VulkanWindow({ width: 480, height: 320, title: "NVK Mandelbrot" });
@@ -26,19 +31,21 @@ Engine.prototype.startVulkan = function () {
       console.log(key);
   };*/
 
-  let appInfo = new VkApplicationInfo();
-  appInfo.pApplicationName = "NVK Mandelbrot"
-  appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-  appInfo.pEngineName = "engine";
-  appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-  appInfo.apiVersion = VK_API_VERSION_1_0;
+  let appInfo = new VkApplicationInfo({
+    pApplicationName: "NVK Mandelbrot",
+    applicationVersion: VK_MAKE_VERSION(1, 0, 0),
+    pEngineName: "engine",
+    engineVersion: VK_MAKE_VERSION(1, 0, 0),
+    apiVersion: VK_API_VERSION_1_0,
+  });
 
-  let instanceInfo = new VkInstanceCreateInfo();
-  instanceInfo.pApplicationinfo = appInfo;
-  instanceInfo.enabledLayerCount = validationLayers.length;
-  instanceInfo.ppEnabledLayerNames = validationLayers;
-  instanceInfo.enabledExtensionCount = extensions.length;
-  instanceInfo.ppEnabledExtensionNames = extensions;
+  let instanceInfo = new VkInstanceCreateInfo({
+    pApplicationinfo: appInfo,
+    enabledLayerCount: validationLayers.length,
+    ppEnabledLayerNames: validationLayers,
+    enabledExtensionCount: extensions.length,
+    ppEnabledExtensionNames: extensions,
+  });
 
 
   if (vkCreateInstance(instanceInfo, null, this.instance) !== VK_SUCCESS)
@@ -75,21 +82,24 @@ Engine.prototype.startVulkan = function () {
   }
   let queueFamily = 0;//TODO
 
-  let deviceQueueInfo = new VkDeviceQueueCreateInfo();
-  deviceQueueInfo.queueFamilyIndex = queueFamily;
-  deviceQueueInfo.queueCount = 1;
-  deviceQueueInfo.pQueuePriorities = new Float32Array([1, 1, 1, 1]);
+  let deviceQueueInfo = new VkDeviceQueueCreateInfo({
+    queueFamilyIndex: queueFamily,
+    queueCount: 1,
+    pQueuePriorities: new Float32Array([1, 1, 1, 1]),
+  });
+
 
   let usedFeatures = new VkPhysicalDeviceFeatures({
 
   });
-  let deviceExtensions = ["VK_KHR_swapchain"]
-  let deviceCreateInfo = new VkDeviceCreateInfo();
-  deviceCreateInfo.queueCreateInfoCount = 1;
-  deviceCreateInfo.pQueueCreateInfos = [deviceQueueInfo];
-  deviceCreateInfo.pEnabledFeatures = usedFeatures;
-  deviceCreateInfo.enabledExtensionCount = deviceExtensions.length;
-  deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions;
+  let deviceExtensions = [VK_KHR_SWAPCHAIN_EXTENSION_NAME]
+  let deviceCreateInfo = new VkDeviceCreateInfo({
+    queueCreateInfoCount: 1,
+    pQueueCreateInfos: [deviceQueueInfo],
+    pEnabledFeatures: usedFeatures,
+    enabledExtensionCount: deviceExtensions.length,
+    ppEnabledExtensionNames: deviceExtensions,
+  });
 
   this.device = new VkDevice();
   if (vkCreateDevice(physicalDevice, deviceCreateInfo, null, this.device) !== VK_SUCCESS)
@@ -113,29 +123,63 @@ Engine.prototype.startVulkan = function () {
   for (let i = 0; i < surfaceFormats.length; i++)
     console.log("format: " + surfaceFormats[i].format);
 
-  let swapchainCreateInfo = new VkSwapchainCreateInfoKHR();
-  swapchainCreateInfo.surface = this.surface;
-  swapchainCreateInfo.minImageCount = 2;
-  swapchainCreateInfo.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
-  swapchainCreateInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-  swapchainCreateInfo.imageExtent = new VkExtent2D({ width: 480, height: 320 });
-  swapchainCreateInfo.imageArrayLayers = 1;
-  swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-  swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-  swapchainCreateInfo.queueFamilyIndexCount = 0;
-  swapchainCreateInfo.pQueueFamilyIndices = null;
-  swapchainCreateInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-  swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-  swapchainCreateInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
-  swapchainCreateInfo.clipped = true;
-  swapchainCreateInfo.oldSwapchain = null;
+  let swapchainCreateInfo = new VkSwapchainCreateInfoKHR({
+    surface: this.surface,
+    minImageCount: 2,
+    imageFormat: VK_FORMAT_B8G8R8A8_UNORM,
+    imageColorSpace: VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
+    imageExtent: new VkExtent2D({ width: 480, height: 320 }),
+    imageArrayLayers: 1,
+    imageUsage: VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    imageSharingMode: VK_SHARING_MODE_EXCLUSIVE,
+    queueFamilyIndexCount: 0,
+    pQueueFamilyIndices: null,
+    preTransform: VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+    compositeAlpha: VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+    presentMode: VK_PRESENT_MODE_FIFO_KHR,
+    clipped: true,
+    oldSwapchain: this.swapchain,
+  });
 
   this.swapchain = new VkSwapchainKHR();
   vkCreateSwapchainKHR(this.device, swapchainCreateInfo, null, this.swapchain);
+
+  let swapchainImageCount = { $: 0 };
+  vkGetSwapchainImagesKHR(this.device, this.swapchain, swapchainImageCount, null);
+  let swapchainImages = new InitializedArray(VkImage, swapchainImageCount.$);
+  vkGetSwapchainImagesKHR(this.device, this.swapchain, swapchainImageCount, swapchainImages)
+  
+  this.imageViews = new InitializedArray(VkImageView, swapchainImageCount.$);
+  for (let i = 0;i<this.imageViews.length;i++){
+    let imageViewCreateInfo = new VkImageViewCreateInfo({
+      image: swapchainImages[i],
+      viewType: VK_IMAGE_VIEW_TYPE_2D,
+      format: VK_FORMAT_B8G8R8A8_UNORM,
+      components: new VkComponentMapping({
+        r: VK_COMPONENT_SWIZZLE_IDENTITY,
+        g: VK_COMPONENT_SWIZZLE_IDENTITY,
+        b: VK_COMPONENT_SWIZZLE_IDENTITY,
+        a: VK_COMPONENT_SWIZZLE_IDENTITY,
+      }),
+      subresourceRange: new VkImageSubresourceRange({
+        aspectMask: VK_IMAGE_ASPECT_COLOR_BIT,
+        baseMipLevel: 0,
+        levelCount: 1,
+        baseArrayLayer: 0,
+        layerCount: 1,
+      }),
+    });
+    vkCreateImageView(this.device, imageViewCreateInfo, null, this.imageViews[i]);
+  }
+
 }
+
 Engine.prototype.shutdownVulkan = function () {
   vkDeviceWaitIdle(this.device);
 
+  for (let i = 0; i < this.imageViews.length; i++) {
+    vkDestroyImageView(this.device, this.imageViews[i], null);
+  }
   vkDestroySwapchainKHR(this.device, this.swapchain, null);
   vkDestroyDevice(this.device, null);
   vkDestroySurfaceKHR(this.instance, this.surface, null);
