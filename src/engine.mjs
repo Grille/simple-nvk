@@ -19,6 +19,7 @@ export default class Engine {
     this.framebuffers = [];
     this.commandPool = null;
     this.commandBuffers = [];
+    this.queue = null;
     this.semaphores = {
       imageAviable: null,
       renderingDone: null,
@@ -112,8 +113,8 @@ Engine.prototype.startVulkan = function () {
   result = vkCreateDevice(physicalDevice, deviceCreateInfo, null, this.device);
   ASSERT_VK_RESULT(result);
 
-  let queue = new VkQueue();
-  vkGetDeviceQueue(this.device, 0, 0, queue);
+  this.queue = new VkQueue();
+  vkGetDeviceQueue(this.device, 0, 0, this.queue);
 
   let surfaceSupport = { $: false };
   vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, 0, this.surface, surfaceSupport);
@@ -293,13 +294,22 @@ Engine.prototype.startVulkan = function () {
   subpassDescription.preserveAttachmentCount = 0;
   subpassDescription.pPreserveAttachments = null;
 
+  let subpassDependency = new VkSubpassDependency();
+  subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+  subpassDependency.dstSubpass = 0;
+  subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  subpassDependency.srcAccessMask = 0;
+  subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+  subpassDependency.dependencyFlags = 0;
+
   let renderPassCreateInfo = new VkRenderPassCreateInfo();
   renderPassCreateInfo.attachmentCount = 1;
   renderPassCreateInfo.pAttachments = [attachmentDescription];
   renderPassCreateInfo.subpassCount = 1;
   renderPassCreateInfo.pSubpasses = [subpassDescription];
-  renderPassCreateInfo.dependencyCount = 0;
-  renderPassCreateInfo.pDependencies = null;
+  renderPassCreateInfo.dependencyCount = 1;
+  renderPassCreateInfo.pDependencies = [subpassDependency];
 
   let dynamicStateCreateInfo = new VkPipelineDynamicStateCreateInfo();
   dynamicStateCreateInfo.dynamicStateCount = 0;
@@ -380,7 +390,7 @@ Engine.prototype.startVulkan = function () {
     renderPassBeginInfo.clearValueCount = 1;
     renderPassBeginInfo.pClearValues = [new VkClearValue({
       color: new VkClearColorValue({
-        float32: [0, 0, 0, 1],
+        float32: [0, 0, 0.5, 1],
       }),
       depthStencil: null,
     })],
@@ -398,17 +408,41 @@ Engine.prototype.startVulkan = function () {
     ASSERT_VK_RESULT(result);
   }
 
-  /*
+  
   let semaphoreCreateInfo = new VkSemaphoreCreateInfo();
   this.semaphores.imageAviable = new VkSemaphore();
   this.semaphores.renderingDone = new VkSemaphore();
   vkCreateSemaphore(this.device, semaphoreCreateInfo, null, this.semaphores.imageAviable);
   vkCreateSemaphore(this.device, semaphoreCreateInfo, null, this.semaphores.renderingDone);
-  */
+  
 }
 
 Engine.prototype.drawFrame = function(){
 
+  
+  let imageIndex = {$:0};
+  vkAcquireNextImageKHR(this.device, this.swapchain, 1E5, this.semaphores.imageAviable, null, imageIndex);
+  
+  let submitInfo = new VkSubmitInfo();
+  submitInfo.waitSemaphoreCount = 1;
+  submitInfo.pWaitSemaphores = [this.semaphores.imageAviable];
+  submitInfo.pWaitDstStageMask = new Int32Array([VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT]);
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers = [this.commandBuffers[imageIndex.$]];
+  submitInfo.signalSemaphoreCount = 1;
+  submitInfo.pSignalSemaphores = [this.semaphores.renderingDone];
+  
+  vkQueueSubmit(this.queue, 1, [submitInfo], null);
+
+  let presentInfoKHR = new VkPresentInfoKHR();
+  presentInfoKHR.waitSemaphoreCount = 1;
+  presentInfoKHR.pWaitSemaphores = [this.semaphores.renderingDone];
+  presentInfoKHR.swapchainCount = 1;
+  presentInfoKHR.pSwapchains = [this.swapchain];
+  presentInfoKHR.pImageIndices = new Uint32Array([imageIndex.$]);
+  presentInfoKHR.pResults = null;
+
+  vkQueuePresentKHR(this.queue, presentInfoKHR);
 }
 
 Engine.prototype.createShaderModule = function (code) {
@@ -430,6 +464,9 @@ Engine.prototype.shutdownVulkan = function () {
   vkDeviceWaitIdle(this.device);
 
  
+  vkDestroySemaphore(this.device,this.semaphores.imageAviable,null);
+  vkDestroySemaphore(this.device,this.semaphores.renderingDone,null);
+
   vkFreeCommandBuffers(this.device, this.commandPool, this.commandBuffers.length, this.commandBuffers);
   vkDestroyCommandPool(this.device, this.commandPool, null);
   for (let i = 0; i < this.framebuffers.length; i++) {
