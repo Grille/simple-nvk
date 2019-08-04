@@ -5,7 +5,8 @@
     "start": "node --experimental-modules ./src/program.mjs"
   },
   "dependencies": {
-    "nvk": "latest"
+    "nvk": "latest",
+    "nvk-essentials": "latest"
   },
   "author": "paul hirch",
   "license": "MIT"

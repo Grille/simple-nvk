@@ -1,5 +1,6 @@
 import fs from "fs"
 import nvk from "nvk"
+import { GLSL } from "nvk-essentials"
 import { InitializedArray } from "./utils.mjs"
 
 Object.assign(global, nvk);
@@ -24,6 +25,7 @@ export default class Engine {
       imageAviable: null,
       renderingDone: null,
     }
+    this.vulkanReady = false;
   }
 }
 
@@ -31,18 +33,18 @@ function ASSERT_VK_RESULT(result) {
   if (result !== VK_SUCCESS) throw new Error(`Vulkan assertion failed!`);
 };
 
-Engine.prototype.startVulkan = function () {
-  this.instance = new VkInstance();
-  this.window = new VulkanWindow({ width: 480, height: 320, title: "NVK Mandelbrot" });
-  this.surface = new VkSurfaceKHR();
+Engine.prototype.log = function (text) {
+  console.log(text);
+}
 
+Engine.prototype.startWindow = function (obj) {
+  this.window = new VulkanWindow(obj);
+}
+
+Engine.prototype.startVulkan = function () {
   let validationLayers = ["VK_LAYER_LUNARG_standard_validation","VK_LAYER_LUNARG_parameter_validation"];
   let extensions = [...this.window.getRequiredInstanceExtensions()];
   let result = 0;
-  /*
-  for (let key in this.window) {
-      console.log(key);
-  };*/
 
   let appInfo = new VkApplicationInfo();
   appInfo.pApplicationName = "NVK Mandelbrot";
@@ -58,11 +60,11 @@ Engine.prototype.startVulkan = function () {
   instanceInfo.enabledExtensionCount = extensions.length;
   instanceInfo.ppEnabledExtensionNames = extensions;
 
-
+  this.instance = new VkInstance();
   result = vkCreateInstance(instanceInfo, null, this.instance)
   ASSERT_VK_RESULT(result);
   //vkGetInstanceProcAddr(instance,"vkk_surface");
-
+  this.surface = new VkSurfaceKHR();
   if (this.window.createSurface(this.instance, null, this.surface) !== 0)
     console.error("createSurface failed");
 
@@ -136,7 +138,7 @@ Engine.prototype.startVulkan = function () {
   swapchainCreateInfo.minImageCount = 2;
   swapchainCreateInfo.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
   swapchainCreateInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-  swapchainCreateInfo.imageExtent = new VkExtent2D({ width: 480, height: 320 });
+  swapchainCreateInfo.imageExtent = new VkExtent2D({ width: this.window.width, height: this.window.height });
   swapchainCreateInfo.imageArrayLayers = 1;
   swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
   swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -146,7 +148,7 @@ Engine.prototype.startVulkan = function () {
   swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
   swapchainCreateInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
   swapchainCreateInfo.clipped = true;
-  swapchainCreateInfo.oldSwapchain = this.swapchain;
+  swapchainCreateInfo.oldSwapchain = null;
 
   this.swapchain = new VkSwapchainKHR();
   vkCreateSwapchainKHR(this.device, swapchainCreateInfo, null, this.swapchain);
@@ -175,8 +177,17 @@ Engine.prototype.startVulkan = function () {
     vkCreateImageView(this.device, imageViewCreateInfo, null, this.swapImageViews[i]);
   }
 
-  let shaderVert = fs.readFileSync("./src/vert.spv");
-  let shaderFrag = fs.readFileSync("./src/frag.spv");
+  let shaderVert = GLSL.toSPIRVSync({
+    source: fs.readFileSync(`./src/shader.vert`),
+    extension: `vert`
+  }).output;
+  let shaderFrag = GLSL.toSPIRVSync({
+    source: fs.readFileSync(`./src/shader.frag`),
+    extension: `frag`
+  }).output;
+
+  //let shaderVert = fs.readFileSync("./src/vert.spv");
+  //let shaderFrag = fs.readFileSync("./src/frag.spv");
 
   let shaderModuleVert = this.createShaderModule(shaderVert);
   let shaderModuleFrag = this.createShaderModule(shaderFrag);
@@ -207,16 +218,16 @@ Engine.prototype.startVulkan = function () {
   let viewport = new VkViewport();
   viewport.x = 0;
   viewport.y = 0;
-  viewport.width = 480;
-  viewport.height = 320;
+  viewport.width = this.window.width;
+  viewport.height = this.window.height;
   viewport.minDepth = 0;
   viewport.maxDepth = 1;
   
   let scissor = new VkRect2D();
   scissor.offset.x = 0;
   scissor.offset.y = 0;
-  scissor.extent.width = 480;
-  scissor.extent.height = 320;
+  scissor.extent.width = this.window.width;
+  scissor.extent.height = this.window.height;
 
   let viewportCreateInfo = new VkPipelineViewportStateCreateInfo();
   viewportCreateInfo.viewportCount = 1;
@@ -347,8 +358,8 @@ Engine.prototype.startVulkan = function () {
     framebufferCreateInfo.renderPass = this.renderPass;
     framebufferCreateInfo.attachmentCount = 1;
     framebufferCreateInfo.pAttachments = [this.swapImageViews[i]];
-    framebufferCreateInfo.width = 480;
-    framebufferCreateInfo.height = 320;
+    framebufferCreateInfo.width = this.window.width;
+    framebufferCreateInfo.height = this.window.height;
     framebufferCreateInfo.layers = 1;
 
     result = vkCreateFramebuffer(this.device, framebufferCreateInfo, null, this.framebuffers[i]);
@@ -385,8 +396,8 @@ Engine.prototype.startVulkan = function () {
     renderPassBeginInfo.framebuffer = this.framebuffers[i];
     renderPassBeginInfo.renderArea.offset.x = 0;
     renderPassBeginInfo.renderArea.offset.y = 0;
-    renderPassBeginInfo.renderArea.extent.width = 480;
-    renderPassBeginInfo.renderArea.extent.height = 320;
+    renderPassBeginInfo.renderArea.extent.width = this.window.width;
+    renderPassBeginInfo.renderArea.extent.height = this.window.height;
     renderPassBeginInfo.clearValueCount = 1;
     renderPassBeginInfo.pClearValues = [new VkClearValue({
       color: new VkClearColorValue({
@@ -415,11 +426,13 @@ Engine.prototype.startVulkan = function () {
   vkCreateSemaphore(this.device, semaphoreCreateInfo, null, this.semaphores.imageAviable);
   vkCreateSemaphore(this.device, semaphoreCreateInfo, null, this.semaphores.renderingDone);
   
+  this.vulkanReady = true;
+  this.log("vulkan started");
 }
 
 Engine.prototype.drawFrame = function(){
+  if (!this.vulkanReady) return;
 
-  
   let imageIndex = {$:0};
   vkAcquireNextImageKHR(this.device, this.swapchain, 1E5, this.semaphores.imageAviable, null, imageIndex);
   
@@ -456,11 +469,20 @@ Engine.prototype.createShaderModule = function (code) {
   let result = vkCreateShaderModule(this.device, shaderModuleCreateInfo, null, shaderModule)
   ASSERT_VK_RESULT(result);
 
-  this.shaderModules[this.shaderModules.length] = shaderModule;
+  let index = this.shaderModules.length;
+  for (let i = 0;i<this.shaderModules.length;i++){
+    if (this.shaderModules[i]===null){
+      index = i;
+      break;
+    }
+  }
+  this.shaderModules[index] = shaderModule;
   return shaderModule;
 }
 
 Engine.prototype.shutdownVulkan = function () {
+  this.vulkanReady = false;
+
   vkDeviceWaitIdle(this.device);
 
  
@@ -479,10 +501,15 @@ Engine.prototype.shutdownVulkan = function () {
   }
   vkDestroyPipelineLayout(this.device, this.pipelineLayout, null);
   for (let i = 0; i < this.shaderModules.length; i++) {
-    vkDestroyShaderModule(this.device, this.shaderModules[i], null);
+    if (this.shaderModules[i] !== null) {
+      vkDestroyShaderModule(this.device, this.shaderModules[i], null);
+      this.shaderModules[i] = null;
+    }
   }
   vkDestroySwapchainKHR(this.device, this.swapchain, null);
   vkDestroyDevice(this.device, null);
   vkDestroySurfaceKHR(this.instance, this.surface, null);
   vkDestroyInstance(this.instance, null);
+  
+  this.log("vulkan destroyed");
 }
