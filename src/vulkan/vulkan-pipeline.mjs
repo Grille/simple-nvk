@@ -129,9 +129,13 @@ export function createPipeline(shaderStageInfos, viewportCreateInfo, inputCreate
   renderPassCreateInfo.dependencyCount = 1;
   renderPassCreateInfo.pDependencies = [subpassDependency];
 
+  let dynamicStates = new Int32Array([
+    //VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR
+  ]);
+
   let dynamicStateCreateInfo = new VkPipelineDynamicStateCreateInfo();
-  dynamicStateCreateInfo.dynamicStateCount = 0;
-  dynamicStateCreateInfo.pDynamicStates = null;//new Int32Array([VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR]),
+  dynamicStateCreateInfo.dynamicStateCount = dynamicStates.length;
+  dynamicStateCreateInfo.pDynamicStates = dynamicStates;
 
   this.renderPass = new VkRenderPass();
   result = vkCreateRenderPass(this.device, renderPassCreateInfo, null, this.renderPass);

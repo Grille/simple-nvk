@@ -22,12 +22,15 @@ function destroyArray(arg0, array, func) {
     }
   }
 }
+export function destroySwapchain(){
+  vkDeviceWaitIdle(this.device);
+}
+
 export function shutdownVulkan() {
   this.vulkanReady = false;
 
   vkDeviceWaitIdle(this.device);
 
-  destroyObject(this.device, this.semaphores, vkDestroySemaphore);
 
   vkFreeCommandBuffers(this.device, this.commandPool, this.commandBuffers.length, this.commandBuffers);
   vkDestroyCommandPool(this.device, this.commandPool, null);
@@ -44,8 +47,14 @@ export function shutdownVulkan() {
   destroyArray(this.device, this.shaderModules, vkDestroyShaderModule);
 
   vkDestroySwapchainKHR(this.device, this.swapchain, null);
-  vkDestroyDevice(this.device, null);
+
+
+
   vkDestroySurfaceKHR(this.instance, this.surface, null);
+
+  destroyObject(this.device, this.semaphores, vkDestroySemaphore);
+
+  vkDestroyDevice(this.device, null);
   vkDestroyInstance(this.instance, null);
 
   //this.log("vulkan destroyed");
