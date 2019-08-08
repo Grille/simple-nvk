@@ -7,6 +7,7 @@ function ASSERT_VK_RESULT(result) {
 };
 
 export let instance = null;
+export let physicalDevice = null;
 export let device = null;
 export let window = null;
 export let surface = null;
@@ -26,6 +27,7 @@ export let semaphores = {
 }
 export let shaderSrcCache = {};
 export let vulkanReady = false;
+export let pipelineInputChanged = false;
 
 export function log(text) {
   console.log(text);
@@ -52,12 +54,12 @@ export function startVulkan() {
 
   this.createInstance();
 
-  let physicalDevice = this.getPhysicalDevice();
-  let queueFamily = this.getQueueFamilyIndex(physicalDevice);
+  this.physicalDevice = this.getPhysicalDevice();
+  let queueFamily = this.getQueueFamilyIndex(this.physicalDevice);
 
-  this.device = this.getLogicalDevice(physicalDevice, queueFamily);
+  this.device = this.getLogicalDevice(this.physicalDevice, queueFamily);
   this.queue = this.getQueue(queueFamily);
-  this.surface = this.getSurface(physicalDevice);
+  this.surface = this.getSurface(this.physicalDevice);
 
   this.createSwapchain();
 

@@ -3,3 +3,10 @@ export class InitializedArray {
     return [...Array(count)].map(() => new ctor());
   }
 };
+
+export function pushHandle(handles,handle) {
+
+}
+export function deleteHandle(handles,handle) {
+  
+}

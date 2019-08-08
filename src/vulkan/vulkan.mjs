@@ -1,4 +1,5 @@
 import * as basic from "./vulkan-basic.mjs";
+import * as buffer from "./vulkan-buffer.mjs";
 import * as command from "./vulkan-command.mjs";
 import * as destroy from "./vulkan-destroy.mjs";
 import * as pipeline from "./vulkan-pipeline.mjs";
@@ -11,6 +12,7 @@ class Vulkan {
 }
 
 Object.assign(Vulkan.prototype, basic);
+Object.assign(Vulkan.prototype, buffer);
 Object.assign(Vulkan.prototype, command);
 Object.assign(Vulkan.prototype, destroy);
 Object.assign(Vulkan.prototype, pipeline);

@@ -31,6 +31,10 @@ export function createViewport() {
 
 export function createInput() {
   let vertex = new VkPipelineVertexInputStateCreateInfo({});
+  vertex.vertexBindingDescriptionCount = 0;
+  vertex.pVertexBindingDescriptions = null;
+  vertex.vertexAttributeDescriptionCount = 0;
+  vertex.pVertexAttributeDescriptions = null;
 
   let assembly = new VkPipelineInputAssemblyStateCreateInfo();
   assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
