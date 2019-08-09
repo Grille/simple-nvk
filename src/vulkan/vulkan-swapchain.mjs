@@ -2,10 +2,6 @@ import nvk from "nvk"
 import { InitializedArray } from "./utils.mjs"
 Object.assign(global, nvk);
 
-function ASSERT_VK_RESULT(result) {
-  if (result !== VK_SUCCESS) throw new Error(`Vulkan assertion failed!`);
-};
-
 export function createSwapchain() {
   let swapchainCreateInfo = new VkSwapchainCreateInfoKHR();
   swapchainCreateInfo.surface = this.surface;

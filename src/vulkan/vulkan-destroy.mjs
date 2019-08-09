@@ -44,7 +44,6 @@ export function shutdownVulkan() {
 
   vkDeviceWaitIdle(this.device);
 
-
   vkFreeCommandBuffers(this.device, this.commandPool, this.commandBuffers.length, this.commandBuffers);
   vkDestroyCommandPool(this.device, this.commandPool, null);
 

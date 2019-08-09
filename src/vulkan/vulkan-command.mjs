@@ -2,10 +2,6 @@ import nvk from "nvk"
 import { InitializedArray } from "./utils.mjs"
 Object.assign(global, nvk);
 
-function ASSERT_VK_RESULT(result) {
-  if (result !== VK_SUCCESS) throw new Error(`Vulkan assertion failed!`);
-};
-
 export function createCommand(queueFamily) {
     let commandPoolCreateInfo = new VkCommandPoolCreateInfo();
     commandPoolCreateInfo.queueFamilyIndex = queueFamily;
@@ -14,7 +10,7 @@ export function createCommand(queueFamily) {
 
     this.commandPool = new VkCommandPool();
     result = vkCreateCommandPool(this.device, commandPoolCreateInfo, null, this.commandPool);
-    ASSERT_VK_RESULT(result);
+    this.assertVulkan(result);
 
     let commandBufferAllocateInfo = new VkCommandBufferAllocateInfo();
     commandBufferAllocateInfo.commandPool = this.commandPool;
@@ -23,7 +19,7 @@ export function createCommand(queueFamily) {
 
     this.commandBuffers = new InitializedArray(VkCommandBuffer, this.swapImageViews.length);
     result = vkAllocateCommandBuffers(this.device, commandBufferAllocateInfo, this.commandBuffers);
-    ASSERT_VK_RESULT(result);
+    this.assertVulkan(result);
 
     let commandBufferBeginInfo = new VkCommandBufferBeginInfo();
     commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -32,7 +28,7 @@ export function createCommand(queueFamily) {
     for (let i = 0; i < this.swapImageViews.length; i++) {
         let cmdBuffer = this.commandBuffers[i];
         result = vkBeginCommandBuffer(cmdBuffer, commandBufferBeginInfo);
-        ASSERT_VK_RESULT(result);
+        this.assertVulkan(result);
 
         let renderPassBeginInfo = new VkRenderPassBeginInfo();
         renderPassBeginInfo.renderPass = this.renderPass;
@@ -73,12 +69,14 @@ export function createCommand(queueFamily) {
 
         vkCmdSetScissor(cmdBuffer, 0, 1, [scissor]);
         */
-       
+
+        let offsets = new BigUint64Array([0n]);
+        vkCmdBindVertexBuffers(cmdBuffer,0,1,[this.bufferHandles[0].buffer],offsets);
         vkCmdDraw(cmdBuffer, 3, 1, 0, 0);
 
         vkCmdEndRenderPass(cmdBuffer);
 
         result = vkEndCommandBuffer(cmdBuffer);
-        ASSERT_VK_RESULT(result);
+        this.assertVulkan(result);
     }
 }

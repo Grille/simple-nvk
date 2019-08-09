@@ -1,10 +1,6 @@
 import nvk from "nvk"
 Object.assign(global, nvk);
 
-function ASSERT_VK_RESULT(result) {
-  if (result !== VK_SUCCESS) throw new Error(`Vulkan assertion failed!`);
-};
-
 export function createViewport() {
   let viewport = new VkViewport();
   viewport.x = 0;
@@ -33,6 +29,7 @@ export function createInput() {
   let { bufferHandles } = this;
   let vertexBindings = [], vertexAttributes = [];
   let id = 0;
+  
   for (let i = 0; i < bufferHandles.length; i++) {
     let handle = bufferHandles[i];
     if (handle !== null && handle.id !== -1) {
@@ -41,6 +38,7 @@ export function createInput() {
       id += 1;
     }
   }
+
   let vertex = new VkPipelineVertexInputStateCreateInfo({});
   vertex.vertexBindingDescriptionCount = vertexBindings.length;
   vertex.pVertexBindingDescriptions = vertexBindings;
@@ -97,7 +95,7 @@ export function createPipeline(shaderStageInfos, viewportCreateInfo, inputCreate
 
   this.pipelineLayout = new VkPipelineLayout();
   result = vkCreatePipelineLayout(this.device, pipelineLayoutInfo, null, this.pipelineLayout);
-  ASSERT_VK_RESULT(result);
+  this.assertVulkan(result);
 
   //VK_FORMAT_B8G8R8A8_UNORM
   let attachmentDescription = new VkAttachmentDescription();
@@ -154,7 +152,7 @@ export function createPipeline(shaderStageInfos, viewportCreateInfo, inputCreate
 
   this.renderPass = new VkRenderPass();
   result = vkCreateRenderPass(this.device, renderPassCreateInfo, null, this.renderPass);
-  ASSERT_VK_RESULT(result);
+  this.assertVulkan(result);
 
   let graphicsPipelineCreateInfo = new VkGraphicsPipelineCreateInfo();
   graphicsPipelineCreateInfo.stageCount = shaderStageInfos.length;
@@ -176,5 +174,5 @@ export function createPipeline(shaderStageInfos, viewportCreateInfo, inputCreate
 
   this.pipeline = new VkPipeline();
   result = vkCreateGraphicsPipelines(this.device, null, 1, [graphicsPipelineCreateInfo], null, [this.pipeline]);
-  ASSERT_VK_RESULT(result);
+  this.assertVulkan(result);
 }

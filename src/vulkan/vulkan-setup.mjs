@@ -2,10 +2,6 @@ import nvk from "nvk"
 import { InitializedArray } from "./utils.mjs"
 Object.assign(global, nvk);
 
-function ASSERT_VK_RESULT(result) {
-  if (result !== VK_SUCCESS) throw new Error(`Vulkan assertion failed!`);
-};
-
 export function createInstance() {
   let validationLayers = ["VK_LAYER_LUNARG_standard_validation", "VK_LAYER_LUNARG_parameter_validation"];
   let extensions = [...this.window.getRequiredInstanceExtensions()];
@@ -26,7 +22,7 @@ export function createInstance() {
 
   this.instance = new VkInstance();
   let result = vkCreateInstance(instanceInfo, null, this.instance)
-  ASSERT_VK_RESULT(result);
+  this.assertVulkan(result);
 }
 
 export function getSurface(physicalDevice) {
@@ -108,7 +104,7 @@ export function getLogicalDevice(physicalDevice, queueFamily) {
 
   this.device = new VkDevice();
   let result = vkCreateDevice(physicalDevice, deviceCreateInfo, null, this.device);
-  ASSERT_VK_RESULT(result);
+  this.assertVulkan(result);
 
   return this.device;
 }

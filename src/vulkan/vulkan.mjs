@@ -1,3 +1,4 @@
+import * as assert from "./vulkan-assert.mjs";
 import * as basic from "./vulkan-basic.mjs";
 import * as buffer from "./vulkan-buffer.mjs";
 import * as command from "./vulkan-command.mjs";
@@ -11,6 +12,7 @@ class Vulkan {
   constructor(){}
 }
 
+Object.assign(Vulkan.prototype, assert);
 Object.assign(Vulkan.prototype, basic);
 Object.assign(Vulkan.prototype, buffer);
 Object.assign(Vulkan.prototype, command);

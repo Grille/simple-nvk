@@ -2,10 +2,6 @@ import nvk from "nvk"
 import { InitializedArray } from "./utils.mjs"
 Object.assign(global, nvk);
 
-function ASSERT_VK_RESULT(result) {
-  if (result !== VK_SUCCESS) throw new Error(`Vulkan assertion failed!`);
-};
-
 export let instance = null;
 export let physicalDevice = null;
 export let device = null;
@@ -86,7 +82,8 @@ export function startVulkan() {
     shaderStageCreateInfoFrag,
   ]
 
-  //let buffer = this.createBuffer();
+  let buffer = this.createBuffer(0, 4, 2, 3);
+  this.updateBuffer(buffer, vertexPos, 0, vertexPos.length);
   let viewport = this.createViewport();
   let inputInfo = this.createInput();
   this.createPipeline(shaderStageInfos, viewport, inputInfo);
@@ -102,7 +99,7 @@ export function startVulkan() {
     framebufferCreateInfo.layers = 1;
 
     result = vkCreateFramebuffer(this.device, framebufferCreateInfo, null, this.framebuffers[i]);
-    ASSERT_VK_RESULT(result);
+    this.assertVulkan(result);
   }
 
   this.createCommand(queueFamily);

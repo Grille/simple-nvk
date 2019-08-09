@@ -6,10 +6,12 @@ export let bufferHandles = [];
 export function createBuffer(location = 0, type = 1, vec = 1, size = 1) {
   this.bufferChanged = true;
 
+  let result = 0;
+
   let bindingID = 0;
   let binding = new VkVertexInputBindingDescription();
   binding.binding = bindingID;
-  binding.stride = 4;
+  binding.stride = type*vec;
   binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
   let attribute = new VkVertexInputAttributeDescription();
@@ -28,12 +30,12 @@ export function createBuffer(location = 0, type = 1, vec = 1, size = 1) {
   bufferInfo.pQueueFamilyIndices = null;
 
   let buffer = new VkBuffer();
-  vkCreateBuffer(this.device, bufferInfo, null, buffer);
-
+  result = vkCreateBuffer(this.device, bufferInfo, null, buffer);
+  this.assertVulkan(result);
   
   let memoryRequirements = new VkMemoryRequirements()
-  vkGetBufferMemoryRequirements(this.device, buffer, memoryRequirements);
-
+  result = vkGetBufferMemoryRequirements(this.device, buffer, memoryRequirements);
+  this.assertVulkan(result);
   
   let memoryAllocateInfo = new VkMemoryAllocateInfo();
   memoryAllocateInfo.allocationSize = memoryRequirements.size;
@@ -42,9 +44,16 @@ export function createBuffer(location = 0, type = 1, vec = 1, size = 1) {
     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
   );
 
+  let deviceMemory = new VkDeviceMemory();
+  result = vkAllocateMemory(this.device, memoryAllocateInfo, null, deviceMemory);
+  this.assertVulkan(result);
+
+  vkBindBufferMemory(this.device, buffer, deviceMemory, 0);
+
   let bufferHandle = {
     bindingInfo: binding,
     attributeInfo: attribute,
+    memory: deviceMemory,
     data: null,
     buffer: buffer,
     id: -1,
@@ -54,12 +63,22 @@ export function createBuffer(location = 0, type = 1, vec = 1, size = 1) {
 
   return bufferHandle;
 }
-export function updateBuffer(buffer, data, offset, length) {
-
+export function updateBuffer(handle, data, offset, length) {
+  let result = 0;
+  let dataPtr = { $: 0n };
+  result = vkMapMemory(this.device, handle.memory, offset, length, 0, dataPtr);
+  this.assertVulkan(result);
+  let mappedBuffer = ArrayBuffer.fromAddress(dataPtr.$, length);
+  let srcView = new Uint8Array(data);
+  let dstView = new Uint8Array(mappedBuffer);
+  dstView.set(srcView, 0x0);
+  result = vkUnmapMemory(this.device, handle.memory);
+  this.assertVulkan(result);
 }
 export function destroyBuffer(handle) {
   if (handle.id === -1) return;
   this.bufferChanged = true;
+  vkFreeMemory(this.device, handle.memory);
   vkDestroyBuffer(this.device, handle.buffer, null);
   deleteHandle(bufferHandles, handle);
 }
