@@ -86,6 +86,7 @@ export function startVulkan() {
     shaderStageCreateInfoFrag,
   ]
 
+  //let buffer = this.createBuffer();
   let viewport = this.createViewport();
   let inputInfo = this.createInput();
   this.createPipeline(shaderStageInfos, viewport, inputInfo);

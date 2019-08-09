@@ -30,11 +30,22 @@ export function createViewport() {
 }
 
 export function createInput() {
+  let { bufferHandles } = this;
+  let vertexBindings = [], vertexAttributes = [];
+  let id = 0;
+  for (let i = 0; i < bufferHandles.length; i++) {
+    let handle = bufferHandles[i];
+    if (handle !== null && handle.id !== -1) {
+      vertexBindings[id] = handle.bindingInfo;
+      vertexAttributes[id] = handle.attributeInfo;
+      id += 1;
+    }
+  }
   let vertex = new VkPipelineVertexInputStateCreateInfo({});
-  vertex.vertexBindingDescriptionCount = 0;
-  vertex.pVertexBindingDescriptions = null;
-  vertex.vertexAttributeDescriptionCount = 0;
-  vertex.pVertexAttributeDescriptions = null;
+  vertex.vertexBindingDescriptionCount = vertexBindings.length;
+  vertex.pVertexBindingDescriptions = vertexBindings;
+  vertex.vertexAttributeDescriptionCount = vertexAttributes.length;
+  vertex.pVertexAttributeDescriptions = vertexAttributes;
 
   let assembly = new VkPipelineInputAssemblyStateCreateInfo();
   assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;

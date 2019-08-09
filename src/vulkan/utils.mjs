@@ -4,9 +4,19 @@ export class InitializedArray {
   }
 };
 
-export function pushHandle(handles,handle) {
 
+export function pushHandle(handles,handle) {
+  let id = handles.length;
+  for (let i = 0;i<handles.length;i++){
+    if (handles[i]===null){
+      id = i;
+      break;
+    }
+  }
+  handle.id = id;
+  handles[id] = handle;
 }
 export function deleteHandle(handles,handle) {
-  
+  handles[handle.id] = null;
+  handle.id = -1;
 }

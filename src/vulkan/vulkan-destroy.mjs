@@ -6,6 +6,19 @@ function ASSERT_VK_RESULT(result) {
   if (result !== VK_SUCCESS) throw new Error(`Vulkan assertion failed!`);
 };
 
+function destroy(arg0=null,arg1=null,func){
+  if (arg0 !== null && arg1 !== null);
+  func(arg0, arg1, null);
+}
+function destroyHandles(handles, func) {
+  for (let i = 0; i < handles.length; i++) {
+    let handle = handles[i];
+    if (handle !== null && handle.id !== -1) {
+      func(handle);
+    }
+  }
+  handles.length = 0;
+}
 function destroyObject(arg0, obj, func) {
   for (let key in obj) {
     if (obj[key] !== null) {
@@ -36,6 +49,8 @@ export function shutdownVulkan() {
   vkDestroyCommandPool(this.device, this.commandPool, null);
 
   destroyArray(this.device, this.framebuffers, vkDestroyFramebuffer);
+
+  destroyHandles(this.bufferHandles, (a) => this.destroyBuffer(a));
 
   vkDestroyPipeline(this.device, this.pipeline, null);
   vkDestroyRenderPass(this.device, this.renderPass, null);
