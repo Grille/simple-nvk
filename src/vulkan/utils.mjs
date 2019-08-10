@@ -19,4 +19,7 @@ export function pushHandle(handles,handle) {
 export function deleteHandle(handles,handle) {
   handles[handle.id] = null;
   handle.id = -1;
+  /*handles.sort((a, b)=>{
+    return b.id - a.id
+  });*/
 }

@@ -36,7 +36,7 @@ export function startWindow(obj) {
 let vertexPos = new Float32Array([
   0.0, -0.5,
   0.5, 0.5,
-  0.0, 0.5,
+  -0.5, 0.5,
 ])
 let vertexColor = new Float32Array([
   1, 0, 0,
@@ -82,8 +82,13 @@ export function startVulkan() {
     shaderStageCreateInfoFrag,
   ]
 
-  let buffer = this.createBuffer(0, 4, 2, 3);
-  this.updateBuffer(buffer, vertexPos, 0, vertexPos.length);
+  let buffer = this.createBuffer(0, 4, 2, 1);
+  this.updateBuffer(buffer, vertexPos, 0, 3);
+  //let buffer2 = this.createBuffer(1, 4, 3, vertexColor.length);
+  //this.updateBuffer(buffer2, vertexColor, 0, vertexColor.length);
+  //let buffer2 = this.createBuffer(1, 4, 2, 3);
+  //this.updateBuffer(buffer2, vertexPos, 0, vertexPos.length);
+
   let viewport = this.createViewport();
   let inputInfo = this.createInput();
   this.createPipeline(shaderStageInfos, viewport, inputInfo);

@@ -40,10 +40,14 @@ export function createInput() {
   }
 
   let vertex = new VkPipelineVertexInputStateCreateInfo({});
-  vertex.vertexBindingDescriptionCount = vertexBindings.length;
-  vertex.pVertexBindingDescriptions = vertexBindings;
-  vertex.vertexAttributeDescriptionCount = vertexAttributes.length;
-  vertex.pVertexAttributeDescriptions = vertexAttributes;
+  if (vertexBindings.length > 0) {
+    vertex.vertexBindingDescriptionCount = vertexBindings.length;
+    vertex.pVertexBindingDescriptions = vertexBindings;
+  }
+  if (vertexAttributes.length > 0) {
+    vertex.vertexAttributeDescriptionCount = vertexAttributes.length;
+    vertex.pVertexAttributeDescriptions = vertexAttributes;
+  }
 
   let assembly = new VkPipelineInputAssemblyStateCreateInfo();
   assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;

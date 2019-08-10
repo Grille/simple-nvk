@@ -2,6 +2,7 @@ import nvk from "nvk"
 
 export function assertVulkan(result){
   if (result === nvk.VK_SUCCESS) return;
+  if (result == null) throw new Error(`Vulkan assertion invalid!`);
   let vkResults = [
     "VK_NOT_READY",
     "VK_TIMEOUT",

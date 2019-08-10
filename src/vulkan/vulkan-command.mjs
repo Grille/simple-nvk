@@ -71,7 +71,20 @@ export function createCommand(queueFamily) {
         */
 
         let offsets = new BigUint64Array([0n]);
-        vkCmdBindVertexBuffers(cmdBuffer,0,1,[this.bufferHandles[0].buffer],offsets);
+        let { bufferHandles } = this;
+        let vertexBuffers = [];
+        let id = 0;
+        
+        for (let i = 0; i < bufferHandles.length; i++) {
+          let handle = bufferHandles[i];
+          if (handle !== null && handle.id !== -1) {
+            vertexBuffers[id] = handle.buffer;
+            id += 1;
+          }
+        }
+
+        vkCmdBindVertexBuffers(cmdBuffer, 0, vertexBuffers.length, vertexBuffers, offsets);
+
         vkCmdDraw(cmdBuffer, 3, 1, 0, 0);
 
         vkCmdEndRenderPass(cmdBuffer);
