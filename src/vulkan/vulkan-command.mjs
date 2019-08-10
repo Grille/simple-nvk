@@ -70,7 +70,7 @@ export function createCommand(queueFamily) {
         vkCmdSetScissor(cmdBuffer, 0, 1, [scissor]);
         */
 
-        let offsets = new BigUint64Array([0n]);
+        let offsets = new BigUint64Array([0n,0n]);
         let { bufferHandles } = this;
         let vertexBuffers = [];
         let id = 0;

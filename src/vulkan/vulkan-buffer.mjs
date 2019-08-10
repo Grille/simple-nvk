@@ -1,26 +1,29 @@
+import nvk from "nvk"
 import { pushHandle, deleteHandle } from "./utils.mjs";
 
 export let bufferChanged = false;
 export let bufferHandles = [];
 
-export function createBuffer(location = 0, type = 1, vec = 1, size = 1) {
+export function createBuffer(location = 0, size = 1, vector = 1,type=0, length = 1) {
   this.bufferChanged = true;
 
   let result = 0;
 
+  let stride = size * vector;
+  let bufferSize = stride * length;
+  let format = this.findVkFormat(size, vector, type);
+
   let bindingID = location;
   let binding = new VkVertexInputBindingDescription();
   binding.binding = bindingID;
-  binding.stride = type * vec;
+  binding.stride = stride;
   binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX; 
 
   let attribute = new VkVertexInputAttributeDescription();
   attribute.location = location;
   attribute.binding = bindingID;
-  attribute.format = VK_FORMAT_R32G32_SFLOAT;
+  attribute.format = format;
   attribute.offset = 0;
-
-  let bufferSize = size * vec * type;
 
   let bufferInfo = new VkBufferCreateInfo();
   bufferInfo.size = bufferSize;
@@ -53,9 +56,12 @@ export function createBuffer(location = 0, type = 1, vec = 1, size = 1) {
     bindingInfo: binding,
     attributeInfo: attribute,
     memory: deviceMemory,
-    data: null,
     buffer: buffer,
     id: -1,
+    length: length,
+    typeInfo: {
+      size, vector, type, stride
+    },
   }
 
   pushHandle(this.bufferHandles, bufferHandle);
@@ -64,21 +70,20 @@ export function createBuffer(location = 0, type = 1, vec = 1, size = 1) {
 }
 export function updateBuffer(handle, data, offset, length) {
   let dataPtr = { $: 0n };
-  
-  let result = vkMapMemory(this.device, handle.memory, offset, length, 0, dataPtr);
+  let { stride } = handle.typeInfo;
+  let result = vkMapMemory(this.device, handle.memory, offset * stride, length * stride, 0, dataPtr);
   this.assertVulkan(result);
 
-  
-  let verticesBuffer = ArrayBuffer.fromAddress(dataPtr.$, length*4*2);
-  let srcView = new Float32Array(data);
-  let dstView = new Float32Array(verticesBuffer);
-  for (let ii = 0; ii < srcView.length; ++ii) {
-    dstView[ii] = srcView[ii];
+  let verticesBuffer = ArrayBuffer.fromAddress(dataPtr.$, length * stride);
+  let srcView = new Uint8Array(data.buffer);
+  let dstView = new Uint8Array(verticesBuffer);
+  for (let i = 0; i < length * stride; ++i) {
+    dstView[i] = srcView[i];
   };
-  
+
   /*
-  let mappedBuffer = ArrayBuffer.fromAddress(dataPtr.$, length);
-  let srcView = new Uint8Array(data);
+  let mappedBuffer = ArrayBuffer.fromAddress(dataPtr.$, length*stride);
+  let srcView = new Uint8Array(data.buffer);
   let dstView = new Uint8Array(mappedBuffer);
   dstView.set(srcView, 0x0);
   */
@@ -91,6 +96,23 @@ export function destroyBuffer(handle) {
   vkFreeMemory(this.device, handle.memory);
   vkDestroyBuffer(this.device, handle.buffer, null);
   deleteHandle(bufferHandles, handle);
+}
+export function findVkFormat(size, vec, type) {
+  let enumName = `VK_FORMAT_`
+  size*=8;
+  switch (vec) {
+    case 1: enumName += `R${size}`; break;
+    case 2: enumName += `R${size}G${size}`; break;
+    case 3: enumName += `R${size}G${size}B${size}`; break;
+    case 4: enumName += `R${size}G${size}B${size}A${size}`; break;
+  }
+  switch (type) {
+    case this.UINT: enumName += `_UINT`; break;
+    case this.INT: enumName += `_SINT`; break;
+    case this.FLOAT: enumName += `_SFLOAT`; break;
+  }
+  //console.log(enumName)
+  return nvk[enumName];
 }
 export function findMemoryTypeIndex(typeFilter, properties) {
   let memoryProperties = new VkPhysicalDeviceMemoryProperties();

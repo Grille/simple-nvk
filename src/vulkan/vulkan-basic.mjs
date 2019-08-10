@@ -82,10 +82,12 @@ export function startVulkan() {
     shaderStageCreateInfoFrag,
   ]
 
-  let buffer = this.createBuffer(0, 4, 2, 1);
+  let {UINT,INT,FLOAT} = this;
+
+  let buffer = this.createBuffer(0, 4, 2, FLOAT, 1);
   this.updateBuffer(buffer, vertexPos, 0, 3);
-  //let buffer2 = this.createBuffer(1, 4, 3, vertexColor.length);
-  //this.updateBuffer(buffer2, vertexColor, 0, vertexColor.length);
+  let buffer2 = this.createBuffer(1, 4, 3, FLOAT, 3);
+  this.updateBuffer(buffer2, vertexColor, 0, 3);
   //let buffer2 = this.createBuffer(1, 4, 2, 3);
   //this.updateBuffer(buffer2, vertexPos, 0, vertexPos.length);
 

@@ -1,12 +1,14 @@
-export const TYPE_SIZE_INT8 = 1
-export const TYPE_SIZE_UINT8 = 1
-export const TYPE_SIZE_INT16 = 2
-export const TYPE_SIZE_UINT16 = 2
-export const TYPE_SIZE_INT32 = 4
-export const TYPE_SIZE_UINT32 = 4
-export const TYPE_SIZE_INT64 = 8
-export const TYPE_SIZE_UINT64 = 8
-export const TYPE_SIZE_FLOAT32 = 4
-export const TYPE_SIZE_FLOAT64 = 8
+export const INT = 0;
+export const UINT = 1;
+export const FLOAT = 2;
 
-export const TYPE_FLOAT64 = 7
+export const TYPE_INT8 = { type: INT, size: 1 }
+export const TYPE_UINT8 = { type: UINT, size: 1 }
+export const TYPE_INT16 = { type: INT, size: 2 }
+export const TYPE_UINT16 = { type: UINT, size: 2 }
+export const TYPE_INT32 = { type: INT, size: 4 }
+export const TYPE_UINT32 = { type: UINT, size: 4 }
+export const TYPE_INT64 = { type: INT, size: 8 }
+export const TYPE_UINT64 = { type: UINT, size: 8 }
+export const TYPE_FLOAT32 = { type: FLOAT, size: 4 }
+export const TYPE_FLOAT64 = { type: FLOAT, size: 8 }
