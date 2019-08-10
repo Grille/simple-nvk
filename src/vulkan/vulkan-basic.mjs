@@ -35,14 +35,20 @@ export function startWindow(obj) {
 }
 
 let vertexPos = new Float32Array([
-  0.0, -0.5,
+  -0.5, -0.5,
   0.5, 0.5,
   -0.5, 0.5,
+  0.5, -0.5,
 ])
 let vertexColor = new Float32Array([
   1, 0, 0,
   0, 1, 0,
   0, 0, 1,
+  1, 1, 0,
+])
+let index = new Uint32Array([
+  0, 1, 2,
+  0, 3, 1,
 ])
 
 export function startVulkan() {
@@ -83,18 +89,6 @@ export function startVulkan() {
     shaderStageCreateInfoFrag,
   ]
 
-  let {UINT,INT,FLOAT} = this;
-
-  /*
-  let bufferCreateInfo = {
-    location: 0,
-    type: TYPE_FLOAT32,
-    size: 2,
-    length: 1,
-    usage: BUFFER_TYPE_VERTEX,
-  }
-  */
-
   let commandPoolCreateInfo = new VkCommandPoolCreateInfo();
   commandPoolCreateInfo.queueFamilyIndex = queueFamily;
 
@@ -102,16 +96,37 @@ export function startVulkan() {
   result = vkCreateCommandPool(this.device, commandPoolCreateInfo, null, this.commandPool);
   this.assertVulkan(result);
 
-  let buffer = this.createBuffer(0, 4, 2, FLOAT, 1);
-  this.updateBuffer(buffer, vertexPos, 0, 3);
-  let buffer2 = this.createBuffer(1, 4, 3, FLOAT, 3);
-  this.updateBuffer(buffer2, vertexColor, 0, 3);
-  vertexColor = new Float32Array([
-    1, 0, 0,
-    0, 1, 1,
-    0, 0, 1,
-  ])
-  this.updateBuffer(buffer2, vertexColor, 0, 3);
+  let { BUFFER_USAGE_VERTEX, BUFFER_USAGE_INDEX, TYPE_FLOAT32, TYPE_UINT32 } = this;
+
+  let indexBufferCreateInfo = {
+    type: TYPE_UINT32,
+    size: 3,
+    length: 2,
+    usage: BUFFER_USAGE_INDEX,
+  }
+  let posBufferCreateInfo = {
+    type: TYPE_FLOAT32,
+    size: 2,
+    length: 6,
+    usage: BUFFER_USAGE_VERTEX,
+  }
+  let colorBufferCreateInfo = {
+    type: TYPE_FLOAT32,
+    size: 3,
+    length: 6,
+    usage: BUFFER_USAGE_VERTEX,
+  }
+
+  let indexBuffer = this.createBuffer(indexBufferCreateInfo);
+  this.updateBuffer(indexBuffer, index, 0, 2);
+
+  let posBuffer = this.createBuffer(posBufferCreateInfo);
+  this.bindBuffer(posBuffer, 0);
+  this.updateBuffer(posBuffer, vertexPos, 0, 6);
+
+  let colorBuffer = this.createBuffer(colorBufferCreateInfo);
+  this.bindBuffer(colorBuffer, 1);
+  this.updateBuffer(colorBuffer, vertexColor, 0, 6);
   //let buffer2 = this.createBuffer(1, 4, 2, 3);
   //this.updateBuffer(buffer2, vertexPos, 0, vertexPos.length);
 

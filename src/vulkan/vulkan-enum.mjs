@@ -12,3 +12,7 @@ export const TYPE_INT64 = { type: INT, size: 8 }
 export const TYPE_UINT64 = { type: UINT, size: 8 }
 export const TYPE_FLOAT32 = { type: FLOAT, size: 4 }
 export const TYPE_FLOAT64 = { type: FLOAT, size: 8 }
+
+export const BUFFER_USAGE_VERTEX = 0;
+export const BUFFER_USAGE_INDEX = 1;
+export const BUFFER_USAGE_COMPUTE = 2;

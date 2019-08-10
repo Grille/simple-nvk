@@ -4,15 +4,45 @@ import { pushHandle, deleteHandle } from "./utils.mjs";
 export let bufferChanged = false;
 export let bufferHandles = [];
 
-export function createBuffer(location = 0, size = 1, vector = 1,type=0, length = 1) {
-  this.bufferChanged = true;
+export function createBuffer(createInfo) {
+  let { location, size, type, length, usage } = createInfo;
 
-  let result = 0;
+  let vkUsageBit = this.findVkBufferUsage(usage);
 
-  let stride = size * vector;
+  let stride = type.size * size;
   let bufferSize = stride * length;
-  let format = this.findVkFormat(size, vector, type);
+  let format = this.findVkFormat(type.size, size, type.type);
 
+  let hostBuffer = this.createVkBuffer(
+    bufferSize,
+    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+  );
+  let localBuffer = this.createVkBuffer(
+    bufferSize,
+    vkUsageBit | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+  );
+
+  let bufferHandle = {
+    id: -1,
+    location: -1,
+    host: hostBuffer,
+    local: localBuffer,
+    format: format,
+    length: length,
+    stride: stride,
+  }
+
+  pushHandle(this.bufferHandles, bufferHandle);
+
+  return bufferHandle;
+}
+export function bindBuffer(handle, location) {
+  this.bufferChanged = true;
+  handle.location = location;
+
+  /*
   let bindingID = location;
   let binding = new VkVertexInputBindingDescription();
   binding.binding = bindingID;
@@ -24,35 +54,8 @@ export function createBuffer(location = 0, size = 1, vector = 1,type=0, length =
   attribute.binding = bindingID;
   attribute.format = format;
   attribute.offset = 0;
-
-  let hostBuffer = this.createVkBuffer(
-    bufferSize,
-    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-  );
-  let localBuffer = this.createVkBuffer(
-    bufferSize,
-    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-  );
-
-  let bufferHandle = {
-    bindingInfo: binding,
-    attributeInfo: attribute,
-    host: hostBuffer,
-    local: localBuffer,
-    id: -1,
-    length: length,
-    typeInfo: {
-      size, vector, type, stride
-    },
-  }
-
-  pushHandle(this.bufferHandles, bufferHandle);
-
-  return bufferHandle;
+  */
 }
-
 export function createVkBuffer(bufferSize,bufferUsageFlags,memoryPropertieFlags){
   let bufferInfo = new VkBufferCreateInfo();
   bufferInfo.size = bufferSize;
@@ -87,7 +90,7 @@ export function createVkBuffer(bufferSize,bufferUsageFlags,memoryPropertieFlags)
 }
 export function updateBuffer(handle, data, offset, length) {
   let dataPtr = { $: 0n };
-  let { stride } = handle.typeInfo;
+  let { stride } = handle;
   let result = vkMapMemory(this.device, handle.host.memory, offset * stride, length * stride, 0, dataPtr);
   this.assertVulkan(result);
 
@@ -180,8 +183,15 @@ export function findVkFormat(size, vec, type) {
     case this.INT: enumName += `_SINT`; break;
     case this.FLOAT: enumName += `_SFLOAT`; break;
   }
-  //console.log(enumName)
+  console.log(enumName)
   return nvk[enumName];
+}
+export function findVkBufferUsage(usage) {
+  switch (usage) {
+    case this.BUFFER_USAGE_VERTEX: return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    case this.BUFFER_USAGE_INDEX: return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    case this.BUFFER_USAGE_COMPUTE: return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+  }
 }
 export function findMemoryTypeIndex(typeFilter, properties) {
   let memoryProperties = new VkPhysicalDeviceMemoryProperties();

@@ -32,9 +32,21 @@ export function createInput() {
   
   for (let i = 0; i < bufferHandles.length; i++) {
     let handle = bufferHandles[i];
-    if (handle !== null && handle.id !== -1) {
-      vertexBindings[id] = handle.bindingInfo;
-      vertexAttributes[id] = handle.attributeInfo;
+    if (handle !== null && handle.id !== -1 && handle.location !== -1) {
+
+      let binding = new VkVertexInputBindingDescription();
+      binding.binding = handle.location;
+      binding.stride = handle.stride;
+      binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX; 
+    
+      let attribute = new VkVertexInputAttributeDescription();
+      attribute.location = handle.location;
+      attribute.binding = handle.location;
+      attribute.format = handle.format;
+      attribute.offset = 0;
+
+      vertexBindings[id] = binding;
+      vertexAttributes[id] = attribute;
       id += 1;
     }
   }

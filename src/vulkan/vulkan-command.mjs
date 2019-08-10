@@ -65,18 +65,22 @@ export function createCommand(queueFamily) {
         let { bufferHandles } = this;
         let vertexBuffers = [];
         let id = 0;
+        let length = 0;
         
         for (let i = 0; i < bufferHandles.length; i++) {
           let handle = bufferHandles[i];
-          if (handle !== null && handle.id !== -1) {
+          if (handle !== null && handle.id !== -1 && handle.location !== -1) {
             vertexBuffers[id] = handle.local.buffer;
+            length = handle.length;
             id += 1;
           }
         }
 
         vkCmdBindVertexBuffers(cmdBuffer, 0, vertexBuffers.length, vertexBuffers, offsets);
-
-        vkCmdDraw(cmdBuffer, 3, 1, 0, 0);
+        vkCmdBindIndexBuffer(cmdBuffer, bufferHandles[0].local.buffer, 0, VK_INDEX_TYPE_UINT32);
+        
+        vkCmdDrawIndexed(cmdBuffer, 6, 1, 0, 0, 0);
+        //vkCmdDraw(cmdBuffer, length, 1, 0, 0);
 
         vkCmdEndRenderPass(cmdBuffer);
 
