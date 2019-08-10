@@ -1,5 +1,6 @@
 import nvk from "nvk"
 import { InitializedArray } from "./utils.mjs"
+import { TYPE_FLOAT32 } from "./vulkan-enum.mjs";
 Object.assign(global, nvk);
 
 export let instance = null;
@@ -84,9 +85,32 @@ export function startVulkan() {
 
   let {UINT,INT,FLOAT} = this;
 
+  /*
+  let bufferCreateInfo = {
+    location: 0,
+    type: TYPE_FLOAT32,
+    size: 2,
+    length: 1,
+    usage: BUFFER_TYPE_VERTEX,
+  }
+  */
+
+  let commandPoolCreateInfo = new VkCommandPoolCreateInfo();
+  commandPoolCreateInfo.queueFamilyIndex = queueFamily;
+
+  this.commandPool = new VkCommandPool();
+  result = vkCreateCommandPool(this.device, commandPoolCreateInfo, null, this.commandPool);
+  this.assertVulkan(result);
+
   let buffer = this.createBuffer(0, 4, 2, FLOAT, 1);
   this.updateBuffer(buffer, vertexPos, 0, 3);
   let buffer2 = this.createBuffer(1, 4, 3, FLOAT, 3);
+  this.updateBuffer(buffer2, vertexColor, 0, 3);
+  vertexColor = new Float32Array([
+    1, 0, 0,
+    0, 1, 1,
+    0, 0, 1,
+  ])
   this.updateBuffer(buffer2, vertexColor, 0, 3);
   //let buffer2 = this.createBuffer(1, 4, 2, 3);
   //this.updateBuffer(buffer2, vertexPos, 0, vertexPos.length);

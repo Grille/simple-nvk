@@ -3,22 +3,13 @@ import { InitializedArray } from "./utils.mjs"
 Object.assign(global, nvk);
 
 export function createCommand(queueFamily) {
-    let commandPoolCreateInfo = new VkCommandPoolCreateInfo();
-    commandPoolCreateInfo.queueFamilyIndex = queueFamily;
-
-    let result = 0;
-
-    this.commandPool = new VkCommandPool();
-    result = vkCreateCommandPool(this.device, commandPoolCreateInfo, null, this.commandPool);
-    this.assertVulkan(result);
-
     let commandBufferAllocateInfo = new VkCommandBufferAllocateInfo();
     commandBufferAllocateInfo.commandPool = this.commandPool;
     commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     commandBufferAllocateInfo.commandBufferCount = this.swapImageViews.length;
 
     this.commandBuffers = new InitializedArray(VkCommandBuffer, this.swapImageViews.length);
-    result = vkAllocateCommandBuffers(this.device, commandBufferAllocateInfo, this.commandBuffers);
+    let result = vkAllocateCommandBuffers(this.device, commandBufferAllocateInfo, this.commandBuffers);
     this.assertVulkan(result);
 
     let commandBufferBeginInfo = new VkCommandBufferBeginInfo();
@@ -78,7 +69,7 @@ export function createCommand(queueFamily) {
         for (let i = 0; i < bufferHandles.length; i++) {
           let handle = bufferHandles[i];
           if (handle !== null && handle.id !== -1) {
-            vertexBuffers[id] = handle.buffer;
+            vertexBuffers[id] = handle.local.buffer;
             id += 1;
           }
         }
