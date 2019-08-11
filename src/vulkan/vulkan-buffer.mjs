@@ -171,7 +171,7 @@ export function destroyBuffer(handle) {
   vkDestroyBuffer(this.device, handle.host.buffer, null);
   vkFreeMemory(this.device, handle.local.memory);
   vkDestroyBuffer(this.device, handle.local.buffer, null);
-  deleteHandle(bufferHandles, handle);
+  deleteHandle(this.bufferHandles, handle);
 }
 export function findVkFormat(size, vec, type) {
   let enumName = `VK_FORMAT_`

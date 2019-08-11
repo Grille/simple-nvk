@@ -25,7 +25,33 @@ export function createViewport() {
   return viewportCreateInfo;
 }
 
-export function createInput() {
+export function createShaderInput() {
+  let { shaderHandles } = this;
+  let shaderStages = [];
+  let id = 0;
+  
+  for (let i = 0; i < shaderHandles.length; i++) {
+    let handle = shaderHandles[i];
+    if (handle !== null && handle.id !== -1 && handle.stage !== -1) {
+      let vkStage = 0;
+      switch (handle.stage) {
+        case this.SHADER_STAGE_VERTEX: vkStage = VK_SHADER_STAGE_VERTEX_BIT; break;
+        case this.SHADER_STAGE_FRAGMENT: vkStage = VK_SHADER_STAGE_FRAGMENT_BIT; break;
+      }
+
+      let shaderStage = new VkPipelineShaderStageCreateInfo();
+      shaderStage.stage = vkStage;
+      shaderStage.module = handle.shader;
+      shaderStage.pName = "main";
+      shaderStage.pSpecializationInfo = null;
+
+      shaderStages[id] = shaderStage;
+      id += 1;
+    }
+  }
+  return shaderStages;
+}
+export function createBufferInput() {
   let { bufferHandles } = this;
   let vertexBindings = [], vertexAttributes = [];
   let id = 0;
@@ -68,7 +94,7 @@ export function createInput() {
   return { vertex, assembly }
 }
 
-export function createPipeline(shaderStageInfos, viewportCreateInfo, inputCreateInfo) {
+export function createPipeline(bufferInputInfo, shaderInputInfo, viewportCreateInfo) {
   let result;
 
   let rasterizationCreateInfo = new VkPipelineRasterizationStateCreateInfo();
@@ -171,10 +197,10 @@ export function createPipeline(shaderStageInfos, viewportCreateInfo, inputCreate
   this.assertVulkan(result);
 
   let graphicsPipelineCreateInfo = new VkGraphicsPipelineCreateInfo();
-  graphicsPipelineCreateInfo.stageCount = shaderStageInfos.length;
-  graphicsPipelineCreateInfo.pStages = shaderStageInfos;
-  graphicsPipelineCreateInfo.pVertexInputState = inputCreateInfo.vertex;
-  graphicsPipelineCreateInfo.pInputAssemblyState = inputCreateInfo.assembly;
+  graphicsPipelineCreateInfo.stageCount = shaderInputInfo.length;
+  graphicsPipelineCreateInfo.pStages = shaderInputInfo;
+  graphicsPipelineCreateInfo.pVertexInputState = bufferInputInfo.vertex;
+  graphicsPipelineCreateInfo.pInputAssemblyState = bufferInputInfo.assembly;
   graphicsPipelineCreateInfo.pTessellationState = null;
   graphicsPipelineCreateInfo.pViewportState = viewportCreateInfo;
   graphicsPipelineCreateInfo.pRasterizationState = rasterizationCreateInfo;

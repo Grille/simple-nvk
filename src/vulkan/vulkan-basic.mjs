@@ -66,55 +66,39 @@ export function startVulkan() {
 
   this.createSwapchain();
 
-  let shaderVert = this.loadShaderSrc(`./src/shader/shader.vert`, `vert`);
-  let shaderFrag = this.loadShaderSrc(`./src/shader/shader.frag`, `frag`);
-
-  let shaderModuleVert = this.createShaderModule(shaderVert);
-  let shaderModuleFrag = this.createShaderModule(shaderFrag);
-
-  let shaderStageCreateInfoVert = new VkPipelineShaderStageCreateInfo();
-  shaderStageCreateInfoVert.stage = VK_SHADER_STAGE_VERTEX_BIT;
-  shaderStageCreateInfoVert.module = shaderModuleVert;
-  shaderStageCreateInfoVert.pName = "main";
-  shaderStageCreateInfoVert.pSpecializationInfo = null;
-
-  let shaderStageCreateInfoFrag = new VkPipelineShaderStageCreateInfo();
-  shaderStageCreateInfoFrag.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-  shaderStageCreateInfoFrag.module = shaderModuleFrag;
-  shaderStageCreateInfoFrag.pName = "main";
-  shaderStageCreateInfoFrag.pSpecializationInfo = null;
-
-  let shaderStageInfos = [
-    shaderStageCreateInfoVert,
-    shaderStageCreateInfoFrag,
-  ]
-
   let commandPoolCreateInfo = new VkCommandPoolCreateInfo();
   commandPoolCreateInfo.queueFamilyIndex = queueFamily;
 
   this.commandPool = new VkCommandPool();
   result = vkCreateCommandPool(this.device, commandPoolCreateInfo, null, this.commandPool);
   this.assertVulkan(result);
+  
+  let vertSrc = this.loadShaderSrc(`./src/shader/shader.vert`, `vert`);
+  let fragSrc = this.loadShaderSrc(`./src/shader/shader.frag`, `frag`);
 
-  let { BUFFER_USAGE_VERTEX, BUFFER_USAGE_INDEX, TYPE_FLOAT32, TYPE_UINT32 } = this;
+  let vertShader = this.createShader(vertSrc);
+  this.bindShader(vertShader, this.SHADER_STAGE_VERTEX);
+
+  let fragShader = this.createShader(fragSrc);
+  this.bindShader(fragShader, this.SHADER_STAGE_FRAGMENT);
 
   let indexBufferCreateInfo = {
-    type: TYPE_UINT32,
+    type: this.TYPE_UINT32,
     size: 3,
     length: 2,
-    usage: BUFFER_USAGE_INDEX,
+    usage: this.BUFFER_USAGE_INDEX,
   }
   let posBufferCreateInfo = {
-    type: TYPE_FLOAT32,
+    type: this.TYPE_FLOAT32,
     size: 2,
     length: 6,
-    usage: BUFFER_USAGE_VERTEX,
+    usage: this.BUFFER_USAGE_VERTEX,
   }
   let colorBufferCreateInfo = {
-    type: TYPE_FLOAT32,
+    type: this.TYPE_FLOAT32,
     size: 3,
     length: 6,
-    usage: BUFFER_USAGE_VERTEX,
+    usage: this.BUFFER_USAGE_VERTEX,
   }
 
   let indexBuffer = this.createBuffer(indexBufferCreateInfo);
@@ -128,12 +112,12 @@ export function startVulkan() {
   let colorBuffer = this.createBuffer(colorBufferCreateInfo);
   this.bufferSubData(colorBuffer, 0, vertexColor, 0, 6);
   this.bindBuffer(colorBuffer, 1);
-  //let buffer2 = this.createBuffer(1, 4, 2, 3);
-  //this.updateBuffer(buffer2, vertexPos, 0, vertexPos.length);
 
   let viewport = this.createViewport();
-  let inputInfo = this.createInput();
-  this.createPipeline(shaderStageInfos, viewport, inputInfo);
+
+  let shaderInputInfo = this.createShaderInput();
+  let bufferInputInfo = this.createBufferInput();
+  this.createPipeline(bufferInputInfo, shaderInputInfo, viewport);
 
   this.framebuffers = new InitializedArray(VkFramebuffer, this.swapImageViews.length);
   for (let i = 0; i < this.swapImageViews.length; i++) {
