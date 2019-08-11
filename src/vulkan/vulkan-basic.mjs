@@ -10,7 +10,6 @@ export let window = null;
 export let surface = null;
 export let swapchain = null;
 export let swapImageViews = [];
-export let shaderModules = [];
 export let pipelineLayout = null;
 export let renderPass = null;
 export let pipeline = null;
@@ -72,7 +71,7 @@ export function startVulkan() {
   this.commandPool = new VkCommandPool();
   result = vkCreateCommandPool(this.device, commandPoolCreateInfo, null, this.commandPool);
   this.assertVulkan(result);
-  
+
   let vertSrc = this.loadShaderSrc(`./src/shader/shader.vert`, `vert`);
   let fragSrc = this.loadShaderSrc(`./src/shader/shader.frag`, `frag`);
 

@@ -42,7 +42,6 @@ export function destroyShader(handle) {
   deleteHandle(this.shaderHandles, handle);
 }
 
-
 export function createShaderModule(code) {
   let uIntCode = new Uint8Array(code);
   let shaderModuleCreateInfo = new VkShaderModuleCreateInfo({
@@ -54,13 +53,5 @@ export function createShaderModule(code) {
   let result = vkCreateShaderModule(this.device, shaderModuleCreateInfo, null, shaderModule)
   this.assertVulkan(result);
 
-  let index = this.shaderModules.length;
-  for (let i = 0; i < this.shaderModules.length; i++) {
-    if (this.shaderModules[i] === null) {
-      index = i;
-      break;
-    }
-  }
-  this.shaderModules[index] = shaderModule;
   return shaderModule;
 }

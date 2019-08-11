@@ -59,8 +59,6 @@ export function shutdownVulkan() {
 
   vkDestroyPipelineLayout(this.device, this.pipelineLayout, null);
 
-  destroyArray(this.device, this.shaderModules, vkDestroyShaderModule);
-
   vkDestroySwapchainKHR(this.device, this.swapchain, null);
 
 
