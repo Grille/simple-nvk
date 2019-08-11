@@ -3,6 +3,7 @@ import { pushHandle, deleteHandle } from "./utils.mjs";
 
 export let bufferChanged = false;
 export let bufferHandles = [];
+export let indexBufferHandle = null;
 
 export function createBuffer(createInfo) {
   let { location, size, type, length, usage } = createInfo;
@@ -11,6 +12,7 @@ export function createBuffer(createInfo) {
 
   let stride = type.size * size;
   let bufferSize = stride * length;
+  console.log(bufferSize);
   let format = this.findVkFormat(type.size, size, type.type);
 
   let hostBuffer = this.createVkBuffer(
@@ -29,8 +31,10 @@ export function createBuffer(createInfo) {
     location: -1,
     host: hostBuffer,
     local: localBuffer,
+    usage: usage,
     format: format,
     length: length,
+    size: size,
     stride: stride,
   }
 
@@ -38,23 +42,22 @@ export function createBuffer(createInfo) {
 
   return bufferHandle;
 }
-export function bindBuffer(handle, location) {
+export function bindBuffer(handle, location = -1) {
+  if (handle.usage === this.BUFFER_USAGE_INDEX) {
+    this.indexBufferHandle = handle;
+  }
+  else {
+    if (location !== -1) {
+      for (let i = 0; i < this.bufferHandles.length; i++) {
+        let handle = this.bufferHandles[i];
+        if (handle.location === location) {
+          handle.location = -1;
+        }
+      }
+    }
+    handle.location = location;
+  }
   this.bufferChanged = true;
-  handle.location = location;
-
-  /*
-  let bindingID = location;
-  let binding = new VkVertexInputBindingDescription();
-  binding.binding = bindingID;
-  binding.stride = stride;
-  binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX; 
-
-  let attribute = new VkVertexInputAttributeDescription();
-  attribute.location = location;
-  attribute.binding = bindingID;
-  attribute.format = format;
-  attribute.offset = 0;
-  */
 }
 export function createVkBuffer(bufferSize,bufferUsageFlags,memoryPropertieFlags){
   let bufferInfo = new VkBufferCreateInfo();
@@ -88,17 +91,18 @@ export function createVkBuffer(bufferSize,bufferUsageFlags,memoryPropertieFlags)
     memory:memory,
   }
 }
-export function updateBuffer(handle, data, offset, length) {
+export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null) {
   let dataPtr = { $: 0n };
   let { stride } = handle;
-  let result = vkMapMemory(this.device, handle.host.memory, offset * stride, length * stride, 0, dataPtr);
+  if (length === null) length = (data.length / handle.size) | 0;
+  let result = vkMapMemory(this.device, handle.host.memory, offsetDst * stride, length * stride, 0, dataPtr);
   this.assertVulkan(result);
 
   let verticesBuffer = ArrayBuffer.fromAddress(dataPtr.$, length * stride);
   let srcView = new Uint8Array(data.buffer);
   let dstView = new Uint8Array(verticesBuffer);
   for (let i = 0; i < length * stride; ++i) {
-    dstView[i] = srcView[i];
+    dstView[i + offsetDst * stride] = srcView[i + offsetSrc * stride];
   };
 
   //let test = new Float64Array(dstView.buffer);
@@ -112,7 +116,7 @@ export function updateBuffer(handle, data, offset, length) {
   
   vkUnmapMemory(this.device, handle.host.memory);
 
-  this.copyBuffer(handle.host.buffer, handle.local.buffer, offset * stride, length * stride);
+  this.copyBuffer(handle.host.buffer, handle.local.buffer, offsetDst * stride, length * stride);
 }
 export function readBuffer(handle, data, offset, length) {
 
@@ -183,7 +187,7 @@ export function findVkFormat(size, vec, type) {
     case this.INT: enumName += `_SINT`; break;
     case this.FLOAT: enumName += `_SFLOAT`; break;
   }
-  console.log(enumName)
+  //console.log(enumName)
   return nvk[enumName];
 }
 export function findVkBufferUsage(usage) {

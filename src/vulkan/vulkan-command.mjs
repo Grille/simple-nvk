@@ -64,6 +64,7 @@ export function createCommand(queueFamily) {
         let offsets = new BigUint64Array([0n,0n]);
         let { bufferHandles } = this;
         let vertexBuffers = [];
+        let indexBuffer = this.indexBufferHandle;
         let id = 0;
         let length = 0;
         
@@ -77,9 +78,9 @@ export function createCommand(queueFamily) {
         }
 
         vkCmdBindVertexBuffers(cmdBuffer, 0, vertexBuffers.length, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(cmdBuffer, bufferHandles[0].local.buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(cmdBuffer, indexBuffer.local.buffer, 0, VK_INDEX_TYPE_UINT32);
         
-        vkCmdDrawIndexed(cmdBuffer, 6, 1, 0, 0, 0);
+        vkCmdDrawIndexed(cmdBuffer, indexBuffer.length * indexBuffer.size, 1, 0, 0, 0);
         //vkCmdDraw(cmdBuffer, length, 1, 0, 0);
 
         vkCmdEndRenderPass(cmdBuffer);

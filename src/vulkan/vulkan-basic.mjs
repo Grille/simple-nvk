@@ -118,15 +118,16 @@ export function startVulkan() {
   }
 
   let indexBuffer = this.createBuffer(indexBufferCreateInfo);
-  this.updateBuffer(indexBuffer, index, 0, 2);
+  this.bufferSubData(indexBuffer, 0, index, 0, 2);
+  this.bindBuffer(indexBuffer);
 
   let posBuffer = this.createBuffer(posBufferCreateInfo);
+  this.bufferSubData(posBuffer, 0, vertexPos, 0, 6);
   this.bindBuffer(posBuffer, 0);
-  this.updateBuffer(posBuffer, vertexPos, 0, 6);
 
   let colorBuffer = this.createBuffer(colorBufferCreateInfo);
+  this.bufferSubData(colorBuffer, 0, vertexColor, 0, 6);
   this.bindBuffer(colorBuffer, 1);
-  this.updateBuffer(colorBuffer, vertexColor, 0, 6);
   //let buffer2 = this.createBuffer(1, 4, 2, 3);
   //this.updateBuffer(buffer2, vertexPos, 0, vertexPos.length);
 

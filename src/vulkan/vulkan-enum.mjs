@@ -13,6 +13,13 @@ export const TYPE_UINT64 = { type: UINT, size: 8 }
 export const TYPE_FLOAT32 = { type: FLOAT, size: 4 }
 export const TYPE_FLOAT64 = { type: FLOAT, size: 8 }
 
+export const BUFFER_LOCATION_NONE = -1;
+
 export const BUFFER_USAGE_VERTEX = 0;
 export const BUFFER_USAGE_INDEX = 1;
 export const BUFFER_USAGE_COMPUTE = 2;
+
+export const SHADER_STAGE_NONE = -1;
+export const SHADER_STAGE_VERTEX = 0;
+export const SHADER_STAGE_FRAGMENT = 1;
+export const SHADER_STAGE_COMPUTE = 2;
