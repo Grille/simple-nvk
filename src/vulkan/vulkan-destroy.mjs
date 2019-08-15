@@ -39,36 +39,48 @@ export function destroySwapchain(){
   vkDeviceWaitIdle(this.device);
 }
 
-export function shutdownVulkan() {
+export function shutdownVulkan2() {
   this.vulkanReady = false;
 
   vkDeviceWaitIdle(this.device);
 
   vkFreeCommandBuffers(this.device, this.commandPool, this.commandBuffers.length, this.commandBuffers);
-  vkDestroyCommandPool(this.device, this.commandPool, null);
 
   destroyArray(this.device, this.framebuffers, vkDestroyFramebuffer);
 
-  destroyHandles(this.bufferHandles, (a) => this.destroyBuffer(a));
-  destroyHandles(this.shaderHandles, (a) => this.destroyShader(a));
+  destroy(this.device, this.pipeline, vkDestroyPipeline);
+  this.pipeline = null;
   
-  vkDestroyPipeline(this.device, this.pipeline, null);
-  vkDestroyRenderPass(this.device, this.renderPass, null);
+  destroy(this.device, this.renderPass, vkDestroyRenderPass);
+  this.renderPass = null;
+
+  destroy(this.device, this.pipelineLayout, vkDestroyPipelineLayout);
+  this.pipelineLayout = null;
 
   destroyArray(this.device, this.swapImageViews, vkDestroyImageView);
+  
+  destroy(this.device, this.swapchain, vkDestroySwapchainKHR);
+  this.swapchain = null;
 
-  vkDestroyPipelineLayout(this.device, this.pipelineLayout, null);
+  destroy(this.instance, this.surface, vkDestroySurfaceKHR);
+  this.surface = null;
 
-  vkDestroySwapchainKHR(this.device, this.swapchain, null);
+  this.log("vulkan destroyed stage 2");
+}
 
+export function shutdownVulkan() {
+  vkDeviceWaitIdle(this.device);
 
-
-  vkDestroySurfaceKHR(this.instance, this.surface, null);
+  destroy(this.device, this.commandPool, vkDestroyCommandPool);
+  this.commandPool = null;
+  
+  destroyHandles(this.bufferHandles, (a) => this.destroyBuffer(a));
+  destroyHandles(this.shaderHandles, (a) => this.destroyShader(a));
 
   destroyObject(this.device, this.semaphores, vkDestroySemaphore);
 
   vkDestroyDevice(this.device, null);
   vkDestroyInstance(this.instance, null);
 
-  //this.log("vulkan destroyed");
+  this.log("vulkan destroyed stage 1");
 }

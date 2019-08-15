@@ -9,8 +9,10 @@ import Vulkan from "./vulkan/vulkan.mjs";
   engine.startWindow({ width: 480, height: 320, title });
   let window = engine.window;
   engine.startVulkan();
+  engine.startVulkan2();
   (function drawLoop() {
     if (window.shouldClose()) {
+      engine.shutdownVulkan2();
       engine.shutdownVulkan();
     }
     else {
@@ -19,7 +21,8 @@ import Vulkan from "./vulkan/vulkan.mjs";
       setTimeout(drawLoop, 0);
       if (lastResize !== 0 && Date.now() - lastResize > 100 && (window.width > 0 && window.height > 0)) {
         lastResize = 0;
-        engine.startVulkan();
+        //engine.startVulkan();
+        engine.startVulkan2();
       }
       if (Date.now() - fpsDate > 1000){
         window.title = title + ` (${fpsCount})`;
@@ -30,10 +33,27 @@ import Vulkan from "./vulkan/vulkan.mjs";
     }
   })();
   window.onresize = () => {
-    if (engine.vulkanReady)
-      engine.shutdownVulkan();
+    if (engine.vulkanReady){
+      engine.shutdownVulkan2();
+      //engine.shutdownVulkan();
+    }
     lastResize = Date.now();
   }
 })();
 
+/*
+startVulkan
+
+createShader
+createBuffer
+
+createCmdBuffer
+
+loop{
+executeCmdBuffer
+}
+
+shutdownVulkan
+
+*/
 //console.log(nvk);

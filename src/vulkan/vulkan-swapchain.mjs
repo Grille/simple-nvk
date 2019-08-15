@@ -1,6 +1,7 @@
 import nvk from "nvk"
 import { InitializedArray } from "./utils.mjs"
-Object.assign(global, nvk);
+
+export let swapchainHandle = null;
 
 export function createSwapchain() {
   let swapchainCreateInfo = new VkSwapchainCreateInfoKHR();
@@ -21,7 +22,8 @@ export function createSwapchain() {
   swapchainCreateInfo.oldSwapchain = null;
 
   this.swapchain = new VkSwapchainKHR();
-  vkCreateSwapchainKHR(this.device, swapchainCreateInfo, null, this.swapchain);
+  let result = vkCreateSwapchainKHR(this.device, swapchainCreateInfo, null, this.swapchain);
+  this.assertVulkan(result);
 
   let swapchainImageCount = { $: 0 };
   vkGetSwapchainImagesKHR(this.device, this.swapchain, swapchainImageCount, null);
@@ -46,4 +48,15 @@ export function createSwapchain() {
 
     vkCreateImageView(this.device, imageViewCreateInfo, null, this.swapImageViews[i]);
   }
+
+  let swapchainHandle = {
+    swapchain: this.swapchain,
+    imageViews: this.swapImageViews,
+  }
+  this.swapchainHandle = swapchainHandle;
+  return swapchainHandle;
+}
+
+export function destroySwapchain(){
+
 }

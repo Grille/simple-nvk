@@ -1,6 +1,8 @@
 import nvk from "nvk"
 Object.assign(global, nvk);
 
+//export let pipelineHandle = null;
+
 export function createViewport() {
   let viewport = new VkViewport();
   viewport.x = 0;
@@ -185,7 +187,7 @@ export function createPipeline(bufferInputInfo, shaderInputInfo, viewportCreateI
   renderPassCreateInfo.pDependencies = [subpassDependency];
 
   let dynamicStates = new Int32Array([
-    //VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR
+    VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR
   ]);
 
   let dynamicStateCreateInfo = new VkPipelineDynamicStateCreateInfo();

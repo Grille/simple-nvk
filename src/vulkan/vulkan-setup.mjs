@@ -102,11 +102,11 @@ export function getLogicalDevice(physicalDevice, queueFamily) {
   deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions;
 
 
-  this.device = new VkDevice();
-  let result = vkCreateDevice(physicalDevice, deviceCreateInfo, null, this.device);
+  let device = new VkDevice();
+  let result = vkCreateDevice(physicalDevice, deviceCreateInfo, null, device);
   this.assertVulkan(result);
 
-  return this.device;
+  return device;
 }
 
 export function getQueue(queueFamily) {

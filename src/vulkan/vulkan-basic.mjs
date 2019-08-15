@@ -25,6 +25,8 @@ export let shaderSrcCache = {};
 export let vulkanReady = false;
 export let pipelineInputChanged = false;
 
+export let queueFamily = 0;
+
 export function log(text) {
   console.log(text);
 }
@@ -57,20 +59,23 @@ export function startVulkan() {
   this.createInstance();
 
   this.physicalDevice = this.getPhysicalDevice();
-  let queueFamily = this.getQueueFamilyIndex(this.physicalDevice);
+  this.queueFamily = this.getQueueFamilyIndex(this.physicalDevice);
 
-  this.device = this.getLogicalDevice(this.physicalDevice, queueFamily);
-  this.queue = this.getQueue(queueFamily);
-  this.surface = this.getSurface(this.physicalDevice);
-
-  this.createSwapchain();
+  this.device = this.getLogicalDevice(this.physicalDevice, this.queueFamily);
+  this.queue = this.getQueue(this.queueFamily);
 
   let commandPoolCreateInfo = new VkCommandPoolCreateInfo();
-  commandPoolCreateInfo.queueFamilyIndex = queueFamily;
+  commandPoolCreateInfo.queueFamilyIndex = this.queueFamily;
 
   this.commandPool = new VkCommandPool();
   result = vkCreateCommandPool(this.device, commandPoolCreateInfo, null, this.commandPool);
   this.assertVulkan(result);
+
+  let semaphoreCreateInfo = new VkSemaphoreCreateInfo();
+  this.semaphores.imageAviable = new VkSemaphore();
+  this.semaphores.renderingDone = new VkSemaphore();
+  vkCreateSemaphore(this.device, semaphoreCreateInfo, null, this.semaphores.imageAviable);
+  vkCreateSemaphore(this.device, semaphoreCreateInfo, null, this.semaphores.renderingDone);
 
   let vertSrc = this.loadShaderSrc(`./src/shader/shader.vert`, `vert`);
   let fragSrc = this.loadShaderSrc(`./src/shader/shader.frag`, `frag`);
@@ -112,6 +117,14 @@ export function startVulkan() {
   this.bufferSubData(colorBuffer, 0, vertexColor, 0, 6);
   this.bindBuffer(colorBuffer, 1);
 
+  this.log("vulkan started stage 1");
+}
+
+export function startVulkan2() {
+  this.surface = this.getSurface(this.physicalDevice);
+  
+  this.createSwapchain();
+
   let viewport = this.createViewport();
 
   let shaderInputInfo = this.createShaderInput();
@@ -128,20 +141,15 @@ export function startVulkan() {
     framebufferCreateInfo.height = this.window.height;
     framebufferCreateInfo.layers = 1;
 
-    result = vkCreateFramebuffer(this.device, framebufferCreateInfo, null, this.framebuffers[i]);
+    let result = vkCreateFramebuffer(this.device, framebufferCreateInfo, null, this.framebuffers[i]);
     this.assertVulkan(result);
   }
 
-  this.createCommand(queueFamily);
-
-  let semaphoreCreateInfo = new VkSemaphoreCreateInfo();
-  this.semaphores.imageAviable = new VkSemaphore();
-  this.semaphores.renderingDone = new VkSemaphore();
-  vkCreateSemaphore(this.device, semaphoreCreateInfo, null, this.semaphores.imageAviable);
-  vkCreateSemaphore(this.device, semaphoreCreateInfo, null, this.semaphores.renderingDone);
+  this.createCommand(this.queueFamily);
 
   this.vulkanReady = true;
-  this.log("vulkan started");
+
+  this.log("vulkan started stage 2");
 }
 
 export function drawFrame() {

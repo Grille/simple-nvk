@@ -41,7 +41,7 @@ export function createCommand(queueFamily) {
 
         vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeline);
 
-        /*
+        
         let viewport = new VkViewport();
         viewport.x = 0;
         viewport.y = 0;
@@ -59,7 +59,7 @@ export function createCommand(queueFamily) {
         vkCmdSetViewport(cmdBuffer, 0, 1, [viewport]);
 
         vkCmdSetScissor(cmdBuffer, 0, 1, [scissor]);
-        */
+        
 
         let offsets = new BigUint64Array([0n,0n]);
         let { bufferHandles } = this;
