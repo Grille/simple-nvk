@@ -77,14 +77,14 @@ export function startVulkan() {
   vkCreateSemaphore(this.device, semaphoreCreateInfo, null, this.semaphores.imageAviable);
   vkCreateSemaphore(this.device, semaphoreCreateInfo, null, this.semaphores.renderingDone);
 
-  let vertSrc = this.loadShaderSrc(`./src/shader/shader.vert`, `vert`);
-  let fragSrc = this.loadShaderSrc(`./src/shader/shader.frag`, `frag`);
+  let vertSrc = this.loadShaderSrc(`./src/shader/shader.vert`);
+  let fragSrc = this.loadShaderSrc(`./src/shader/shader.frag`);
 
-  let vertShader = this.createShader(vertSrc);
-  this.bindShader(vertShader, this.SHADER_STAGE_VERTEX);
+  let vertShader = this.createShader(vertSrc, this.SHADER_STAGE_VERTEX);
+  this.bindShader(vertShader);
 
-  let fragShader = this.createShader(fragSrc);
-  this.bindShader(fragShader, this.SHADER_STAGE_FRAGMENT);
+  let fragShader = this.createShader(fragSrc, this.SHADER_STAGE_FRAGMENT);
+  this.bindShader(fragShader);
 
   let indexBufferCreateInfo = {
     type: this.TYPE_UINT32,
