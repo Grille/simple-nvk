@@ -23,3 +23,6 @@ export const SHADER_STAGE_NONE = -1;
 export const SHADER_STAGE_VERTEX = 0;
 export const SHADER_STAGE_FRAGMENT = 1;
 export const SHADER_STAGE_COMPUTE = 2;
+
+export const SHADER_SRC_GLSL = 0;
+export const SHADER_SRC_SPIRV = 1;

@@ -11,21 +11,26 @@ export function loadShaderSrc(path) {
   return fs.readFileSync(path);
 }
 
-export function createShader(code, stage) {
+export function createShader(code, srcType, stage) {
 
-  let extension = "";
-  switch (stage) {
-    case this.SHADER_STAGE_VERTEX: extension = "vert"; break;
-    case this.SHADER_STAGE_FRAGMENT: extension = "frag"; break;
-    case this.SHADER_STAGE_COMPUTE: extension = "comp"; break;
+  let uIntCode = null
+  if (srcType === this.SHADER_SRC_GLSL) {
+    let extension = "";
+    switch (stage) {
+      case this.SHADER_STAGE_VERTEX: extension = "vert"; break;
+      case this.SHADER_STAGE_FRAGMENT: extension = "frag"; break;
+      case this.SHADER_STAGE_COMPUTE: extension = "comp"; break;
+    }
+    let spirvCode = GLSL.toSPIRVSync({
+      source: code,
+      extension: extension
+    }).output;
+    uIntCode = new Uint8Array(spirvCode);
   }
-  
-  let spirvCode = GLSL.toSPIRVSync({
-    source: code,
-    extension: extension
-  }).output;
+  else {
+    uIntCode = new Uint8Array(code);
+  }
 
-  let uIntCode = new Uint8Array(spirvCode);
   let shaderModuleCreateInfo = new VkShaderModuleCreateInfo({
     codeSize: uIntCode.length,
     pCode: uIntCode,
