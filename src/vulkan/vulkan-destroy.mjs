@@ -39,7 +39,7 @@ export function destroySwapchain(){
   vkDeviceWaitIdle(this.device);
 }
 
-export function shutdownVulkan2() {
+export function shutdownPipeline() {
   this.vulkanReady = false;
 
   vkDeviceWaitIdle(this.device);

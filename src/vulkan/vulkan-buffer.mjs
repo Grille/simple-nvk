@@ -98,9 +98,9 @@ export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null)
   let result = vkMapMemory(this.device, handle.host.memory, offsetDst * stride, length * stride, 0, dataPtr);
   this.assertVulkan(result);
 
-  let verticesBuffer = ArrayBuffer.fromAddress(dataPtr.$, length * stride);
+  let buffer = ArrayBuffer.fromAddress(dataPtr.$, length * stride);
   let srcView = new Uint8Array(data.buffer);
-  let dstView = new Uint8Array(verticesBuffer);
+  let dstView = new Uint8Array(buffer);
   for (let i = 0; i < length * stride; ++i) {
     dstView[i + offsetDst * stride] = srcView[i + offsetSrc * stride];
   };
@@ -118,7 +118,7 @@ export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null)
 
   this.copyBuffer(handle.host.buffer, handle.local.buffer, offsetDst * stride, length * stride);
 }
-export function readBuffer(handle, data, offset, length) {
+export function bufferReadData(handle, data, offset, length) {
 
 }
 export function copyBuffer(src, dst, offset, size) {

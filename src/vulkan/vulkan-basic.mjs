@@ -1,7 +1,5 @@
 import nvk from "nvk"
 import { InitializedArray } from "./utils.mjs"
-import { TYPE_FLOAT32 } from "./vulkan-enum.mjs";
-Object.assign(global, nvk);
 
 export let instance = null;
 export let physicalDevice = null;
@@ -35,23 +33,6 @@ export function startWindow(obj) {
   this.window = new VulkanWindow(obj);
 }
 
-let vertexPos = new Float32Array([
-  -0.5, -0.5,
-  0.5, 0.5,
-  -0.5, 0.5,
-  0.5, -0.5,
-])
-let vertexColor = new Float32Array([
-  1, 0, 0,
-  0, 1, 0,
-  0, 0, 1,
-  1, 1, 0,
-])
-let index = new Uint32Array([
-  0, 1, 2,
-  0, 3, 1,
-])
-
 export function startVulkan() {
 
   let result = 0;
@@ -77,50 +58,10 @@ export function startVulkan() {
   vkCreateSemaphore(this.device, semaphoreCreateInfo, null, this.semaphores.imageAviable);
   vkCreateSemaphore(this.device, semaphoreCreateInfo, null, this.semaphores.renderingDone);
 
-  let vertSrc = this.loadShaderSrc(`./src/shader/shader.vert`);
-  let fragSrc = this.loadShaderSrc(`./src/shader/shader.frag`);
-
-  let vertShader = this.createShader(vertSrc, this.SHADER_SRC_GLSL, this.SHADER_STAGE_VERTEX);
-  this.bindShader(vertShader);
-
-  let fragShader = this.createShader(fragSrc, this.SHADER_SRC_GLSL, this.SHADER_STAGE_FRAGMENT);
-  this.bindShader(fragShader);
-
-  let indexBufferCreateInfo = {
-    type: this.TYPE_UINT32,
-    size: 3,
-    length: 2,
-    usage: this.BUFFER_USAGE_INDEX,
-  }
-  let posBufferCreateInfo = {
-    type: this.TYPE_FLOAT32,
-    size: 2,
-    length: 6,
-    usage: this.BUFFER_USAGE_VERTEX,
-  }
-  let colorBufferCreateInfo = {
-    type: this.TYPE_FLOAT32,
-    size: 3,
-    length: 6,
-    usage: this.BUFFER_USAGE_VERTEX,
-  }
-
-  let indexBuffer = this.createBuffer(indexBufferCreateInfo);
-  this.bufferSubData(indexBuffer, 0, index, 0, 2);
-  this.bindBuffer(indexBuffer);
-
-  let posBuffer = this.createBuffer(posBufferCreateInfo);
-  this.bufferSubData(posBuffer, 0, vertexPos, 0, 6);
-  this.bindBuffer(posBuffer, 0);
-
-  let colorBuffer = this.createBuffer(colorBufferCreateInfo);
-  this.bufferSubData(colorBuffer, 0, vertexColor, 0, 6);
-  this.bindBuffer(colorBuffer, 1);
-
   this.log("vulkan started stage 1");
 }
 
-export function startVulkan2() {
+export function startPipeline() {
   this.surface = this.getSurface(this.physicalDevice);
   
   this.createSwapchain();
