@@ -17,12 +17,12 @@ export function createBuffer(createInfo) {
 
   let hostBuffer = this.createVkBuffer(
     bufferSize,
-    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
   );
   let localBuffer = this.createVkBuffer(
     bufferSize,
-    vkUsageBit | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    vkUsageBit | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
   );
 
@@ -118,8 +118,19 @@ export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null)
 
   this.copyBuffer(handle.host.buffer, handle.local.buffer, offsetDst * stride, length * stride);
 }
-export function bufferReadData(handle, data, offset, length) {
+export function bufferReadData(handle, offset = 0, length = null) {
+  let dataPtr = { $: 0n };
+  let { stride } = handle;
+  if (length === null) length = handle.length;
 
+  this.copyBuffer(handle.local.buffer, handle.host.buffer, offset * stride, length * stride);
+
+  let result = vkMapMemory(this.device, handle.host.memory, offset * stride, length * stride, 0, dataPtr);
+  this.assertVulkan(result);
+
+  let buffer = ArrayBuffer.fromAddress(dataPtr.$, length * stride);
+
+  return new Float32Array(buffer);
 }
 export function copyBuffer(src, dst, offset, size) {
   let commandBufferAllocateInfo = new VkCommandBufferAllocateInfo();
