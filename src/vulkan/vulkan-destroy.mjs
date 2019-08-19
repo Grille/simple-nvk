@@ -1,11 +1,5 @@
 import nvk from "nvk"
 
-Object.assign(global, nvk);
-
-function ASSERT_VK_RESULT(result) {
-  if (result !== VK_SUCCESS) throw new Error(`Vulkan assertion failed!`);
-};
-
 function destroy(arg0=null,arg1=null,func){
   if (arg0 !== null && arg1 !== null);
   func(arg0, arg1, null);

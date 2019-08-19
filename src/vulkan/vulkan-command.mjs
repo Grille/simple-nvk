@@ -1,6 +1,5 @@
 import nvk from "nvk"
 import { InitializedArray } from "./utils.mjs"
-Object.assign(global, nvk);
 
 export function createCommand(queueFamily) {
     let commandBufferAllocateInfo = new VkCommandBufferAllocateInfo();

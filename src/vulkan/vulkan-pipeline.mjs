@@ -1,7 +1,18 @@
 import nvk from "nvk"
-Object.assign(global, nvk);
-
+import { pushHandle, deleteHandle } from "./utils.mjs";
 //export let pipelineHandle = null;
+/*
+export let pipelineHandles = [];
+
+*/
+/*
+export function createPipeline(createInfo) {
+  let { shaders, buffers, usage } = createInfo;
+  let shaderInfo = this.createShaderInput(shaders);
+  let buffersInfo = this.createShaderInput(shaders);
+}
+export function pipelineSetViewport(pipeline,viewport);
+*/
 
 export function createViewport() {
   let viewport = new VkViewport();
@@ -27,13 +38,12 @@ export function createViewport() {
   return viewportCreateInfo;
 }
 
-export function createShaderInput() {
-  let { shaderHandles } = this;
+export function createShaderInput(handles) {
   let shaderStages = [];
   let id = 0;
   
-  for (let i = 0; i < shaderHandles.length; i++) {
-    let handle = shaderHandles[i];
+  for (let i = 0; i < handles.length; i++) {
+    let handle = handles[i];
     if (handle !== null && handle.id !== -1 && handle.stage !== -1) {
       let vkStage = 0;
       switch (handle.stage) {
@@ -53,13 +63,12 @@ export function createShaderInput() {
   }
   return shaderStages;
 }
-export function createBufferInput() {
-  let { bufferHandles } = this;
+export function createBufferInput(handles) {
   let vertexBindings = [], vertexAttributes = [];
   let id = 0;
   
-  for (let i = 0; i < bufferHandles.length; i++) {
-    let handle = bufferHandles[i];
+  for (let i = 0; i < handles.length; i++) {
+    let handle = handles[i];
     if (handle !== null && handle.id !== -1 && handle.location !== -1) {
 
       let binding = new VkVertexInputBindingDescription();

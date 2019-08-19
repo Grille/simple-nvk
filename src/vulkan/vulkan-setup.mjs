@@ -1,6 +1,5 @@
 import nvk from "nvk"
 import { InitializedArray } from "./utils.mjs"
-Object.assign(global, nvk);
 
 export function createInstance() {
   let validationLayers = ["VK_LAYER_LUNARG_standard_validation", "VK_LAYER_LUNARG_parameter_validation"];

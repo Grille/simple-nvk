@@ -68,8 +68,8 @@ export function startPipeline() {
 
   let viewport = this.createViewport();
 
-  let shaderInputInfo = this.createShaderInput();
-  let bufferInputInfo = this.createBufferInput();
+  let shaderInputInfo = this.createShaderInput(this.shaderHandles);
+  let bufferInputInfo = this.createBufferInput(this.bufferHandles);
   this.createPipeline(bufferInputInfo, shaderInputInfo, viewport);
 
   this.framebuffers = new InitializedArray(VkFramebuffer, this.swapImageViews.length);

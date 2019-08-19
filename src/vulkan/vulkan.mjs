@@ -9,6 +9,9 @@ import * as setup from "./vulkan-setup.mjs";
 import * as shader from "./vulkan-shader.mjs";
 import * as swapchain from "./vulkan-swapchain.mjs";
 
+import nvk from "nvk"
+Object.assign(global, nvk);
+
 class Vulkan {
   constructor(){}
 }

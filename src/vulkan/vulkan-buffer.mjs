@@ -6,9 +6,9 @@ export let bufferHandles = [];
 export let indexBufferHandle = null;
 
 export function createBuffer(createInfo) {
-  let { location, size, type, length, usage } = createInfo;
+  let { location, size, type, length, usage, readable = false} = createInfo;
 
-  let vkUsageBit = this.findVkBufferUsage(usage);
+  let vkUsageBits = this.findVkBufferUsage(usage, readable);
 
   let stride = type.size * size;
   let bufferSize = stride * length;
@@ -17,12 +17,12 @@ export function createBuffer(createInfo) {
 
   let hostBuffer = this.createVkBuffer(
     bufferSize,
-    VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    vkUsageBits.host,
     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
   );
   let localBuffer = this.createVkBuffer(
     bufferSize,
-    vkUsageBit | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    vkUsageBits.local,
     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
   );
 
@@ -36,6 +36,7 @@ export function createBuffer(createInfo) {
     length: length,
     size: size,
     stride: stride,
+    readable: readable,
   }
 
   pushHandle(this.bufferHandles, bufferHandle);
@@ -116,14 +117,14 @@ export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null)
   
   vkUnmapMemory(this.device, handle.host.memory);
 
-  this.copyBuffer(handle.host.buffer, handle.local.buffer, offsetDst * stride, length * stride);
+  this.copyVkBuffer(handle.host.buffer, handle.local.buffer, offsetDst * stride, length * stride);
 }
 export function bufferReadData(handle, offset = 0, length = null) {
   let dataPtr = { $: 0n };
   let { stride } = handle;
   if (length === null) length = handle.length;
 
-  this.copyBuffer(handle.local.buffer, handle.host.buffer, offset * stride, length * stride);
+  this.copyVkBuffer(handle.local.buffer, handle.host.buffer, offset * stride, length * stride);
 
   let result = vkMapMemory(this.device, handle.host.memory, offset * stride, length * stride, 0, dataPtr);
   this.assertVulkan(result);
@@ -132,7 +133,10 @@ export function bufferReadData(handle, offset = 0, length = null) {
 
   return new Float32Array(buffer);
 }
-export function copyBuffer(src, dst, offset, size) {
+export function copyBuffer(srcHandle, dstHandle, offset, size) {
+  this.copyVkBuffer(srcHandle.local.buffer, dstHandle.local.buffer, offset, size);
+}
+export function copyVkBuffer(src, dst, offset, size) {
   let commandBufferAllocateInfo = new VkCommandBufferAllocateInfo();
   commandBufferAllocateInfo.commandPool = this.commandPool;
   commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -201,12 +205,19 @@ export function findVkFormat(size, vec, type) {
   //console.log(enumName)
   return nvk[enumName];
 }
-export function findVkBufferUsage(usage) {
-  switch (usage) {
-    case this.BUFFER_USAGE_VERTEX: return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    case this.BUFFER_USAGE_INDEX: return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    case this.BUFFER_USAGE_COMPUTE: return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+export function findVkBufferUsage(usage, readable) {
+  let host = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+  let local = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+  if (readable) {
+    host |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    local |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
   }
+  switch (usage) {
+    case this.BUFFER_USAGE_VERTEX: local |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT; break;
+    case this.BUFFER_USAGE_INDEX: local |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT; break;
+    case this.BUFFER_USAGE_COMPUTE: local |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT; break;
+  }
+  return { host, local };
 }
 export function findMemoryTypeIndex(typeFilter, properties) {
   let memoryProperties = new VkPhysicalDeviceMemoryProperties();
