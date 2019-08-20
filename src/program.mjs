@@ -69,7 +69,7 @@ function createInput() {
     shader: compShader,
     storageBuffers: [
       { binding: 0, buffer: storageBuffer },
-      //{ binding: 1, buffer: storageBuffer2 },
+      { binding: 1, buffer: storageBuffer2 },
       //{ binding: 2, buffer: storageBuffer2 },
     ],
   }

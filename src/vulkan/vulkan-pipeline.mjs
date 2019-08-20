@@ -1,3 +1,5 @@
+import { InitializedArray } from "./utils.mjs"
+
 export function getVkDescriptorSets(handles) {
   
   let storageLayoutBindings = [];
@@ -27,7 +29,7 @@ export function getVkDescriptorSets(handles) {
   descriptorPoolSize.descriptorCount = handles.length;
 
   let descriptorPoolInfo = new VkDescriptorPoolCreateInfo();
-  descriptorPoolInfo.maxSets = handles.length;
+  descriptorPoolInfo.maxSets = 1;
   descriptorPoolInfo.poolSizeCount = 1;
   descriptorPoolInfo.pPoolSizes = [descriptorPoolSize];
 
@@ -41,13 +43,13 @@ export function getVkDescriptorSets(handles) {
   descriptorSetAllocInfo.descriptorSetCount = 1;
   descriptorSetAllocInfo.pSetLayouts = [descriptorSetLayout];
 
-  let descriptorSets = []
+  let descriptorSet = new VkDescriptorSet();
+  result = vkAllocateDescriptorSets(this.device, descriptorSetAllocInfo, [descriptorSet]);
+  this.assertVulkan(result);
+
+  let writeDescriptorSets = [];
   for (let i = 0; i < handles.length; i++) {
     let { binding, buffer } = handles[i];
-
-    let descriptorSet = new VkDescriptorSet();
-    result = vkAllocateDescriptorSets(this.device, descriptorSetAllocInfo, [descriptorSet]);
-    this.assertVulkan(result);
 
     let bufferInfo = new VkDescriptorBufferInfo();
     bufferInfo.buffer = buffer.local.buffer;
@@ -61,15 +63,16 @@ export function getVkDescriptorSets(handles) {
     writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     writeDescriptorSet.pBufferInfo = [bufferInfo];
 
-    vkUpdateDescriptorSets(this.device, 1, [writeDescriptorSet], 0, null);
-
-    descriptorSets[i] = descriptorSet;
+    writeDescriptorSets[i] = writeDescriptorSet;
   }
+
+  vkUpdateDescriptorSets(this.device, handles.length, writeDescriptorSets, 0, null);
+
 
   return {
     descriptorPool,
     descriptorSetLayout,
     storageLayoutBindings,
-    descriptorSets,
+    descriptorSet,
   }
 }

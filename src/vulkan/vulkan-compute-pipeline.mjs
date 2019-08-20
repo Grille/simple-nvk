@@ -30,7 +30,7 @@ export function createComputePipeline(createInfo){
 
   let handle = {
     descriptorPool: descriptorSets.descriptorPool,
-    descriptorSets: descriptorSets.descriptorSets,
+    descriptorSet: descriptorSets.descriptorSet,
     descriptorSetLayout: descriptorSets.descriptorSetLayout,
     pipelineLayout: pipelineLayout,
     pipeline: pipeline,
@@ -70,7 +70,7 @@ export function compute(pipeline, x = 1, y = 1, z = 1) {
   this.assertVulkan(result);
 
   vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline);
-  vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipelineLayout, 0, pipeline.descriptorSets.length, pipeline.descriptorSets, 0, null);
+  vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipelineLayout, 0, 1, [pipeline.descriptorSet], 0, null);
 
 
 
