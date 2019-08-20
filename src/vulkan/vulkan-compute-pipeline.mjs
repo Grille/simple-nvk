@@ -5,67 +5,16 @@ import { pushHandle, deleteHandle } from "./utils.mjs";
 export let computePipelineHandles = [];
 
 export function createComputePipeline(createInfo){
-  let { shader, buffer } = createInfo;
+  let { shader, storageBuffers = []} = createInfo;
 
-  let storageLayoutBinding = new VkDescriptorSetLayoutBinding();
-  storageLayoutBinding.binding = 0;
-  storageLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-  storageLayoutBinding.descriptorCount = 1;
-  storageLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-  storageLayoutBinding.pImmutableSamplers = null;
-
-  let layoutInfo = new VkDescriptorSetLayoutCreateInfo();
-  layoutInfo.bindingCount = 1;
-  layoutInfo.pBindings = [storageLayoutBinding];
-
-  let descriptorSetLayout = new VkDescriptorSetLayout();
-  let result = vkCreateDescriptorSetLayout(this.device, layoutInfo, null, descriptorSetLayout);
-  this.assertVulkan(result);
-
-  let descriptorPoolSize = new VkDescriptorPoolSize();
-  descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-  descriptorPoolSize.descriptorCount = 1;
-
-  let descriptorPoolInfo = new VkDescriptorPoolCreateInfo();
-  descriptorPoolInfo.maxSets = 1;
-  descriptorPoolInfo.poolSizeCount = 1;
-  descriptorPoolInfo.pPoolSizes = [descriptorPoolSize];
-
-  let descriptorPool = new VkDescriptorPool();
-  result = vkCreateDescriptorPool(this.device, descriptorPoolInfo, null, descriptorPool);
-  this.assertVulkan(result);
-
-  // descriptorsets
-  let descriptorSetAllocInfo = new VkDescriptorSetAllocateInfo();
-  descriptorSetAllocInfo.descriptorPool = descriptorPool;
-  descriptorSetAllocInfo.descriptorSetCount = 1;
-  descriptorSetAllocInfo.pSetLayouts = [descriptorSetLayout];
-
-  let descriptorSet = new VkDescriptorSet();
-  result = vkAllocateDescriptorSets(this.device, descriptorSetAllocInfo, [descriptorSet]);
-  this.assertVulkan(result);
-
-  let bufferInfo = new VkDescriptorBufferInfo();
-  bufferInfo.buffer = buffer.local.buffer;
-  bufferInfo.offset = 0n;
-  bufferInfo.range = buffer.length * buffer.stride;
-
-  let writeDescriptorSet = new VkWriteDescriptorSet();
-  writeDescriptorSet.dstSet = descriptorSet;
-  writeDescriptorSet.dstBinding = 0;
-  writeDescriptorSet.descriptorCount = 1;
-  writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-  writeDescriptorSet.pBufferInfo = [bufferInfo];
-
-  vkUpdateDescriptorSets(this.device, 1, [writeDescriptorSet], 0, null);
-
+  let descriptorSets = this.getVkDescriptorSets(storageBuffers);
 
   let pipelineLayoutInfo = new VkPipelineLayoutCreateInfo();
   pipelineLayoutInfo.setLayoutCount = 1;
-  pipelineLayoutInfo.pSetLayouts = [descriptorSetLayout];
+  pipelineLayoutInfo.pSetLayouts = [descriptorSets.descriptorSetLayout];
 
   let pipelineLayout = new VkPipelineLayout();
-  result = vkCreatePipelineLayout(this.device, pipelineLayoutInfo, null, pipelineLayout);
+  let result = vkCreatePipelineLayout(this.device, pipelineLayoutInfo, null, pipelineLayout);
   this.assertVulkan(result);
 
   let computePipelineInfo = new VkComputePipelineCreateInfo();
@@ -80,9 +29,9 @@ export function createComputePipeline(createInfo){
   this.assertVulkan(result);
 
   let handle = {
-    descriptorPool: descriptorPool,
-    descriptorSet: descriptorSet,
-    descriptorSetLayout: descriptorSetLayout,
+    descriptorPool: descriptorSets.descriptorPool,
+    descriptorSets: descriptorSets.descriptorSets,
+    descriptorSetLayout: descriptorSets.descriptorSetLayout,
     pipelineLayout: pipelineLayout,
     pipeline: pipeline,
   };
@@ -101,7 +50,7 @@ export function destroyComputePipeline(handle) {
   deleteHandle(this.computePipelineHandles, handle);
 }
 
-export function execute(handle) {
+export function compute(pipeline, x = 1, y = 1, z = 1) {
 
   let cmdBufferAllocInfo = new VkCommandBufferAllocateInfo();
   cmdBufferAllocInfo.commandPool = this.commandPool;
@@ -113,27 +62,24 @@ export function execute(handle) {
   this.assertVulkan(result);
 
   // transition
-  console.log("  Creating transition..");
+
   let cmdBufferBeginInfo = new VkCommandBufferBeginInfo();
   cmdBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
   result = vkBeginCommandBuffer(commandBuffer, cmdBufferBeginInfo);
   this.assertVulkan(result);
 
-  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, handle.pipeline);
-  vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, handle.pipelineLayout, 0, 1, [handle.descriptorSet], 0, null);
+  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline);
+  vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipelineLayout, 0, pipeline.descriptorSets.length, pipeline.descriptorSets, 0, null);
 
-  let width = 3200;
-  let height = 2400;
-  let workGroupSize = 32;
 
-  vkCmdDispatch(commandBuffer, (width / workGroupSize) | 0, (height / workGroupSize) | 0, 1);
+
+  vkCmdDispatch(commandBuffer, x | 0, y | 0, z | 0);
 
   result = vkEndCommandBuffer(commandBuffer);
   this.assertVulkan(result);
 
   // execution
-  console.log("  Executing command buffers..");
   let submitInfo = new VkSubmitInfo();
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = [commandBuffer];

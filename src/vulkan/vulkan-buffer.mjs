@@ -12,7 +12,7 @@ export function createBuffer(createInfo) {
 
   let stride = type.size * size;
   let bufferSize = stride * length;
-  console.log(bufferSize);
+
   let format = this.findVkFormat(type.size, size, type.type);
 
   let hostBuffer = this.createVkBuffer(
@@ -131,7 +131,7 @@ export function bufferReadData(handle, offset = 0, length = null) {
 
   let buffer = ArrayBuffer.fromAddress(dataPtr.$, length * stride);
 
-  return new Float32Array(buffer);
+  return buffer;
 }
 export function copyBuffer(srcHandle, dstHandle, offset, size) {
   this.copyVkBuffer(srcHandle.local.buffer, dstHandle.local.buffer, offset, size);

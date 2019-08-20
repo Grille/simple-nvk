@@ -7,7 +7,11 @@ let fpsDate = Date.now();
 let fpsCount = 0;
 let snvk = null;
 let window = null;
-let title = "NVK Mandelbrot";
+let title = "sNVK example";
+
+let width = 800;
+let height = 600;
+let workGroupSize = 32;
 
 let vertexPos = new Float32Array([
   -0.5, -0.5,
@@ -52,30 +56,35 @@ function createInput() {
   let storageBufferCreateInfo = {
     type: snvk.TYPE_FLOAT32,
     size: 4,
-    length: 3200*2400,
+    length: width * height,
     usage: snvk.BUFFER_USAGE_STORAGE,
     readable: true,
   }
 
   let storageBuffer = snvk.createBuffer(storageBufferCreateInfo);
+  let storageBuffer2 = snvk.createBuffer(storageBufferCreateInfo);
   snvk.bufferSubData(storageBuffer, 0, index, 0, 2);
 
   let computePipelineCreateInfo = {
     shader: compShader,
-    buffer: storageBuffer,
+    storageBuffers: [
+      { binding: 0, buffer: storageBuffer },
+      //{ binding: 1, buffer: storageBuffer2 },
+      //{ binding: 2, buffer: storageBuffer2 },
+    ],
   }
-  let cp = snvk.createComputePipeline(computePipelineCreateInfo);
+  let computePipeline = snvk.createComputePipeline(computePipelineCreateInfo);
 
   console.log("execute...")
-  snvk.execute(cp);
+  snvk.compute(computePipeline, width / workGroupSize, height / workGroupSize);
 
   console.log("readback...")
-  let view = snvk.bufferReadData(storageBuffer);
+  let view = new Float32Array(snvk.bufferReadData(storageBuffer));
 
   console.log("pack...")
   let png = new PNG({
-    width: 3200,
-    height: 2400,
+    width: width,
+    height: height,
     filterType: 4
   });
   for (let ii = 0; ii < view.length; ii += 4) {
@@ -85,7 +94,7 @@ function createInput() {
     png.data[ii + 3] = 255 * view[ii + 3];
   };
   console.log("save...")
-  png.pack().pipe(fs.createWriteStream("mandelbrot.png"));
+  png.pack().pipe(fs.createWriteStream("test.png"));
   console.log("finish.")
 
   let vertSrc = snvk.loadShaderSrc(`./src/shader/shader.vert`);
