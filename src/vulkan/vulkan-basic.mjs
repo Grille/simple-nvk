@@ -68,14 +68,17 @@ export function startPipeline() {
 
   let viewport = this.createViewport();
 
-  let shaderInputInfo = this.createShaderInput(this.shaderHandles);
-  let bufferInputInfo = this.createBufferInput(this.bufferHandles);
-  this.createPipeline(bufferInputInfo, shaderInputInfo, viewport);
+  let pipelineCreateInfo = {
+    shaders: this.shaderHandles,
+    buffers: this.bufferHandles,
+    viewport: viewport,
+  }
+  this.pipeline = this.createPipeline(pipelineCreateInfo);
 
   this.framebuffers = new InitializedArray(VkFramebuffer, this.swapImageViews.length);
   for (let i = 0; i < this.swapImageViews.length; i++) {
     let framebufferCreateInfo = new VkFramebufferCreateInfo();
-    framebufferCreateInfo.renderPass = this.renderPass;
+    framebufferCreateInfo.renderPass = this.pipeline.renderPass;
     framebufferCreateInfo.attachmentCount = 1;
     framebufferCreateInfo.pAttachments = [this.swapImageViews[i]];
     framebufferCreateInfo.width = this.window.width;

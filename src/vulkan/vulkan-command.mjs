@@ -21,7 +21,7 @@ export function createCommand(queueFamily) {
         this.assertVulkan(result);
 
         let renderPassBeginInfo = new VkRenderPassBeginInfo();
-        renderPassBeginInfo.renderPass = this.renderPass;
+        renderPassBeginInfo.renderPass = this.pipeline.renderPass;
         renderPassBeginInfo.framebuffer = this.framebuffers[i];
         renderPassBeginInfo.renderArea.offset.x = 0;
         renderPassBeginInfo.renderArea.offset.y = 0;
@@ -38,7 +38,7 @@ export function createCommand(queueFamily) {
 
         vkCmdBeginRenderPass(cmdBuffer, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeline);
+        vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this.pipeline.pipeline);
 
         
         let viewport = new VkViewport();

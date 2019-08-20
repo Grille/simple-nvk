@@ -10,9 +10,7 @@ export let shaderStages = new Array(10).fill(null);
 export function loadShaderSrc(path) {
   return fs.readFileSync(path);
 }
-
 export function createShader(code, srcType, stage) {
-
   let uIntCode = null
   if (srcType === this.SHADER_SRC_GLSL) {
     let extension = "";

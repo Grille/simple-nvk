@@ -91,6 +91,9 @@ export function getLogicalDevice(physicalDevice, queueFamily) {
   deviceQueueInfo.pQueuePriorities = new Float32Array([1, 1, 1, 1]);
 
   let usedFeatures = new VkPhysicalDeviceFeatures();
+  usedFeatures.wideLines = true;
+  usedFeatures.fillModeNonSolid = true;
+  usedFeatures.largePoints = true;
 
   let deviceExtensions = [VK_KHR_SWAPCHAIN_EXTENSION_NAME]
   let deviceCreateInfo = new VkDeviceCreateInfo();

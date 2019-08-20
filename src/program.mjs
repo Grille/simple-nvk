@@ -57,6 +57,13 @@ function createInput() {
     length: 2,
     usage: snvk.BUFFER_USAGE_INDEX,
   }
+  let storageBufferCreateInfo = {
+    type: snvk.TYPE_UINT32,
+    size: 3,
+    length: 2,
+    usage: snvk.BUFFER_USAGE_STORAGE,
+    readable: true,
+  }
   let posBufferCreateInfo = {
     type: snvk.TYPE_FLOAT32,
     size: 2,
@@ -70,8 +77,13 @@ function createInput() {
     usage: snvk.BUFFER_USAGE_VERTEX,
   }
 
+  let storageBuffer = snvk.createBuffer(storageBufferCreateInfo);
+  snvk.bufferSubData(storageBuffer, 0, index, 0, 2);
+  //snvk.bindBuffer(storageBuffer);
+
   let indexBuffer = snvk.createBuffer(indexBufferCreateInfo);
-  snvk.bufferSubData(indexBuffer, 0, index, 0, 2);
+  snvk.copyBuffer(storageBuffer, indexBuffer, 0, 2 * 4 * 3);
+  //snvk.bufferSubData(indexBuffer, 0, index, 0, 2);
   snvk.bindBuffer(indexBuffer);
 
   let posBuffer = snvk.createBuffer(posBufferCreateInfo);

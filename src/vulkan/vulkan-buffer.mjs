@@ -8,7 +8,7 @@ export let indexBufferHandle = null;
 export function createBuffer(createInfo) {
   let { location, size, type, length, usage, readable = false} = createInfo;
 
-  let vkUsageBits = this.findVkBufferUsage(usage, readable);
+  let vkUsageBits = this.getVkBufferUsageBits(usage, readable);
 
   let stride = type.size * size;
   let bufferSize = stride * length;
@@ -205,7 +205,7 @@ export function findVkFormat(size, vec, type) {
   //console.log(enumName)
   return nvk[enumName];
 }
-export function findVkBufferUsage(usage, readable) {
+export function getVkBufferUsageBits(usage, readable) {
   let host = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
   let local = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
   if (readable) {
@@ -215,7 +215,7 @@ export function findVkBufferUsage(usage, readable) {
   switch (usage) {
     case this.BUFFER_USAGE_VERTEX: local |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT; break;
     case this.BUFFER_USAGE_INDEX: local |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT; break;
-    case this.BUFFER_USAGE_COMPUTE: local |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT; break;
+    case this.BUFFER_USAGE_STORAGE: local |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT; break;
   }
   return { host, local };
 }
