@@ -63,7 +63,6 @@ function createInput() {
 
   let storageBuffer = snvk.createBuffer(storageBufferCreateInfo);
   let storageBuffer2 = snvk.createBuffer(storageBufferCreateInfo);
-  snvk.bufferSubData(storageBuffer, 0, index, 0, 2);
 
   let computePipelineCreateInfo = {
     shader: compShader,

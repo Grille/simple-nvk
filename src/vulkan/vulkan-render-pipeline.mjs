@@ -4,11 +4,11 @@ import { pushHandle, deleteHandle } from "./utils.mjs";
 
 export let pipelineHandles = [];
 
-export function createPipeline(createInfo) {
+export function createRenderPipeline(createInfo) {
   let result;
-  let { shaders, buffers, viewport, usage } = createInfo;
+  let { shaders, indexBuffer, vertexBuffers, viewport } = createInfo;
   let shaderInputInfo = this.createShaderInput(shaders);
-  let bufferInputInfo = this.createBufferInput(buffers);
+  let bufferInputInfo = this.createBufferInput(vertexBuffers);
 
   let pipelineLayout = new VkPipelineLayout();
   {
@@ -151,97 +151,7 @@ export function destroyPipeline(handle) {
   deleteHandle(this.pipelineHandles, handle);
 }
 
+export function drawIndexed(pipeline){
+  
+}
 //export function pipelineSetViewport(pipeline,viewport);
-
-
-export function createViewport() {
-  let viewport = new VkViewport();
-  viewport.x = 0;
-  viewport.y = 0;
-  viewport.width = this.window.width;
-  viewport.height = this.window.height;
-  viewport.minDepth = 0;
-  viewport.maxDepth = 1;
-
-  let scissor = new VkRect2D();
-  scissor.offset.x = 0;
-  scissor.offset.y = 0;
-  scissor.extent.width = this.window.width;
-  scissor.extent.height = this.window.height;
-
-  let viewportCreateInfo = new VkPipelineViewportStateCreateInfo();
-  viewportCreateInfo.viewportCount = 1;
-  viewportCreateInfo.pViewports = [viewport];
-  viewportCreateInfo.scissorCount = 1;
-  viewportCreateInfo.pScissors = [scissor];
-
-  return viewportCreateInfo;
-}
-
-export function createShaderInput(handles) {
-  let shaderStages = [];
-  let id = 0;
-  
-  for (let i = 0; i < handles.length; i++) {
-    let handle = handles[i];
-    if (handle !== null && handle.id !== -1 && handle.stage !== -1) {
-      let vkStage = 0;
-      switch (handle.stage) {
-        case this.SHADER_STAGE_VERTEX: vkStage = VK_SHADER_STAGE_VERTEX_BIT; break;
-        case this.SHADER_STAGE_FRAGMENT: vkStage = VK_SHADER_STAGE_FRAGMENT_BIT; break;
-        default: continue;
-      }
-
-      let shaderStage = new VkPipelineShaderStageCreateInfo();
-      shaderStage.stage = vkStage;
-      shaderStage.module = handle.shader;
-      shaderStage.pName = "main";
-      shaderStage.pSpecializationInfo = null;
-
-      shaderStages[id] = shaderStage;
-      id += 1;
-    }
-  }
-  return shaderStages;
-}
-export function createBufferInput(handles) {
-  let vertexBindings = [], vertexAttributes = [];
-  let id = 0;
-  
-  for (let i = 0; i < handles.length; i++) {
-    let handle = handles[i];
-    if (handle !== null && handle.id !== -1 && handle.location !== -1) {
-
-      let binding = new VkVertexInputBindingDescription();
-      binding.binding = handle.location;
-      binding.stride = handle.stride;
-      binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX; 
-    
-      let attribute = new VkVertexInputAttributeDescription();
-      attribute.location = handle.location;
-      attribute.binding = handle.location;
-      attribute.format = handle.format;
-      attribute.offset = 0;
-
-      vertexBindings[id] = binding;
-      vertexAttributes[id] = attribute;
-      id += 1;
-    }
-  }
-
-  let vertex = new VkPipelineVertexInputStateCreateInfo({});
-  if (vertexBindings.length > 0) {
-    vertex.vertexBindingDescriptionCount = vertexBindings.length;
-    vertex.pVertexBindingDescriptions = vertexBindings;
-  }
-  if (vertexAttributes.length > 0) {
-    vertex.vertexAttributeDescriptionCount = vertexAttributes.length;
-    vertex.pVertexAttributeDescriptions = vertexAttributes;
-  }
-
-  let assembly = new VkPipelineInputAssemblyStateCreateInfo();
-  assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-  assembly.primitiveRestartEnabled = false;
-
-  return { vertex, assembly }
-}

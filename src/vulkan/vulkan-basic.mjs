@@ -70,10 +70,11 @@ export function startPipeline() {
 
   let pipelineCreateInfo = {
     shaders: this.shaderHandles,
-    buffers: this.bufferHandles,
+    indexBuffer: this.indexBuffer,
+    vertexBuffers: this.bufferHandles,
     viewport: viewport,
   }
-  this.pipeline = this.createPipeline(pipelineCreateInfo);
+  this.pipeline = this.createRenderPipeline(pipelineCreateInfo);
 
   this.framebuffers = new InitializedArray(VkFramebuffer, this.swapImageViews.length);
   for (let i = 0; i < this.swapImageViews.length; i++) {

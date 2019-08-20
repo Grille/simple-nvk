@@ -7,11 +7,11 @@ export let computePipelineHandles = [];
 export function createComputePipeline(createInfo){
   let { shader, storageBuffers = []} = createInfo;
 
-  let descriptorSets = this.getVkDescriptorSets(storageBuffers);
+  let descriptors = this.getVkBindingDescriptors(storageBuffers, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT);
 
   let pipelineLayoutInfo = new VkPipelineLayoutCreateInfo();
   pipelineLayoutInfo.setLayoutCount = 1;
-  pipelineLayoutInfo.pSetLayouts = [descriptorSets.descriptorSetLayout];
+  pipelineLayoutInfo.pSetLayouts = [descriptors.layout];
 
   let pipelineLayout = new VkPipelineLayout();
   let result = vkCreatePipelineLayout(this.device, pipelineLayoutInfo, null, pipelineLayout);
@@ -29,9 +29,7 @@ export function createComputePipeline(createInfo){
   this.assertVulkan(result);
 
   let handle = {
-    descriptorPool: descriptorSets.descriptorPool,
-    descriptorSet: descriptorSets.descriptorSet,
-    descriptorSetLayout: descriptorSets.descriptorSetLayout,
+    storageDescriptors:descriptors,
     pipelineLayout: pipelineLayout,
     pipeline: pipeline,
   };
@@ -43,10 +41,10 @@ export function createComputePipeline(createInfo){
 }
 export function destroyComputePipeline(handle) {
   if (handle.id === -1) return;
-  vkDestroyDescriptorSetLayout(this.device, handle.descriptorSetLayout, null);
+  vkDestroyDescriptorSetLayout(this.device, handle.storageDescriptors.layout, null);
   vkDestroyPipelineLayout(this.device, handle.pipelineLayout, null);
   vkDestroyPipeline(this.device, handle.pipeline, null);
-  vkDestroyDescriptorPool(this.device, handle.descriptorPool, null);
+  vkDestroyDescriptorPool(this.device, handle.storageDescriptors.pool, null);
   deleteHandle(this.computePipelineHandles, handle);
 }
 
@@ -70,7 +68,7 @@ export function compute(pipeline, x = 1, y = 1, z = 1) {
   this.assertVulkan(result);
 
   vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline);
-  vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipelineLayout, 0, 1, [pipeline.descriptorSet], 0, null);
+  vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipelineLayout, 0, 1, [pipeline.storageDescriptors.set], 0, null);
 
 
 
