@@ -1,4 +1,6 @@
 import Vulkan from "./vulkan/vulkan.mjs";
+import fs from "fs";
+import pngjs from "pngjs"; const { PNG } = pngjs;
 
 let lastResize = 0;
 let fpsDate = Date.now();
@@ -42,8 +44,54 @@ let index = new Uint32Array([
 }
 
 function createInput() {
+  let compSrc = snvk.loadShaderSrc(`./src/shader/shader.comp`);
+  let compShader = snvk.createShader(compSrc, snvk.SHADER_SRC_GLSL, snvk.SHADER_STAGE_COMPUTE);
+  //snvk.bindShader(vertShader);
+
+  console.log("setup...")
+  let storageBufferCreateInfo = {
+    type: snvk.TYPE_FLOAT32,
+    size: 4,
+    length: 3200*2400,
+    usage: snvk.BUFFER_USAGE_STORAGE,
+    readable: true,
+  }
+
+  let storageBuffer = snvk.createBuffer(storageBufferCreateInfo);
+  snvk.bufferSubData(storageBuffer, 0, index, 0, 2);
+
+  let computePipelineCreateInfo = {
+    shader: compShader,
+    buffer: storageBuffer,
+  }
+  let cp = snvk.createComputePipeline(computePipelineCreateInfo);
+
+  console.log("execute...")
+  snvk.execute(cp);
+
+  console.log("readback...")
+  let view = snvk.bufferReadData(storageBuffer);
+
+  console.log("pack...")
+  let png = new PNG({
+    width: 3200,
+    height: 2400,
+    filterType: 4
+  });
+  for (let ii = 0; ii < view.length; ii += 4) {
+    png.data[ii + 0] = 255 * view[ii + 0];
+    png.data[ii + 1] = 255 * view[ii + 1];
+    png.data[ii + 2] = 255 * view[ii + 2];
+    png.data[ii + 3] = 255 * view[ii + 3];
+  };
+  console.log("save...")
+  png.pack().pipe(fs.createWriteStream("mandelbrot.png"));
+  console.log("finish.")
+
   let vertSrc = snvk.loadShaderSrc(`./src/shader/shader.vert`);
   let fragSrc = snvk.loadShaderSrc(`./src/shader/shader.frag`);
+
+  //snvk.bindShader(compShader);
 
   let vertShader = snvk.createShader(vertSrc, snvk.SHADER_SRC_GLSL, snvk.SHADER_STAGE_VERTEX);
   snvk.bindShader(vertShader);
@@ -56,13 +104,6 @@ function createInput() {
     size: 3,
     length: 2,
     usage: snvk.BUFFER_USAGE_INDEX,
-  }
-  let storageBufferCreateInfo = {
-    type: snvk.TYPE_UINT32,
-    size: 3,
-    length: 2,
-    usage: snvk.BUFFER_USAGE_STORAGE,
-    readable: true,
   }
   let posBufferCreateInfo = {
     type: snvk.TYPE_FLOAT32,
@@ -77,13 +118,9 @@ function createInput() {
     usage: snvk.BUFFER_USAGE_VERTEX,
   }
 
-  let storageBuffer = snvk.createBuffer(storageBufferCreateInfo);
-  snvk.bufferSubData(storageBuffer, 0, index, 0, 2);
-  //snvk.bindBuffer(storageBuffer);
-
   let indexBuffer = snvk.createBuffer(indexBufferCreateInfo);
-  snvk.copyBuffer(storageBuffer, indexBuffer, 0, 2 * 4 * 3);
-  //snvk.bufferSubData(indexBuffer, 0, index, 0, 2);
+  //snvk.copyBuffer(storageBuffer, indexBuffer, 0, 2 * 4 * 3);
+  snvk.bufferSubData(indexBuffer, 0, index, 0, 2);
   snvk.bindBuffer(indexBuffer);
 
   let posBuffer = snvk.createBuffer(posBufferCreateInfo);

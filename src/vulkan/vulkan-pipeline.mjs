@@ -189,6 +189,7 @@ export function createShaderInput(handles) {
       switch (handle.stage) {
         case this.SHADER_STAGE_VERTEX: vkStage = VK_SHADER_STAGE_VERTEX_BIT; break;
         case this.SHADER_STAGE_FRAGMENT: vkStage = VK_SHADER_STAGE_FRAGMENT_BIT; break;
+        default: continue;
       }
 
       let shaderStage = new VkPipelineShaderStageCreateInfo();

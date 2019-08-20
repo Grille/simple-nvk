@@ -43,6 +43,7 @@ export function shutdownPipeline() {
   destroyArray(this.device, this.framebuffers, vkDestroyFramebuffer);
 
   destroyHandles(this.pipelineHandles, (a) => this.destroyPipeline(a));
+  destroyHandles(this.computePipelineHandles, (a) => this.destroyComputePipeline(a));
 
   destroyArray(this.device, this.swapImageViews, vkDestroyImageView);
   
