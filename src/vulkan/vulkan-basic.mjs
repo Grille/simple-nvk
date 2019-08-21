@@ -1,5 +1,5 @@
 import nvk from "nvk"
-import { InitializedArray } from "./utils.mjs"
+import { pushHandle, deleteHandle, InitializedArray } from "./utils.mjs"
 
 export let instance = null;
 export let physicalDevice = null;
@@ -96,11 +96,11 @@ export function startPipeline() {
   this.vulkanReady = true;
 }
 
-export function drawFrame() {
-  if (!this.vulkanReady) return;
+export function drawFrame(swapchain) {
+  //if (!this.vulkanReady) return;
 
   let imageIndex = { $: 0 };
-  vkAcquireNextImageKHR(this.device, this.swapchain, 1E5, this.semaphores.imageAviable, null, imageIndex);
+  vkAcquireNextImageKHR(this.device, swapchain.swapchain, 1E5, this.semaphores.imageAviable, null, imageIndex);
 
   let submitInfo = new VkSubmitInfo();
   submitInfo.waitSemaphoreCount = 1;
@@ -117,9 +117,11 @@ export function drawFrame() {
   presentInfoKHR.waitSemaphoreCount = 1;
   presentInfoKHR.pWaitSemaphores = [this.semaphores.renderingDone];
   presentInfoKHR.swapchainCount = 1;
-  presentInfoKHR.pSwapchains = [this.swapchain];
+  presentInfoKHR.pSwapchains = [swapchain.swapchain];
   presentInfoKHR.pImageIndices = new Uint32Array([imageIndex.$]);
   presentInfoKHR.pResults = null;
 
   vkQueuePresentKHR(this.queue, presentInfoKHR);
+
+  console.log("draw");
 }

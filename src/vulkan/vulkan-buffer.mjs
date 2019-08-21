@@ -84,8 +84,8 @@ export function createVkBuffer(bufferSize,bufferUsageFlags,memoryPropertieFlags)
   vkBindBufferMemory(this.device, buffer, memory, 0n);
 
   return {
-    buffer:buffer,
-    memory:memory,
+    buffer: buffer,
+    memory: memory,
   }
 }
 export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null) {

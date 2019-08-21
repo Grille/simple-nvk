@@ -32,7 +32,8 @@ export function main(){
   snvk.startVulkan();
   createInput();
   //snvk.startPipeline();
-  //eventLoop();
+  eventLoop();
+  /*
   window.onresize = () => {
     if (snvk.vulkanReady){
       snvk.shutdownPipeline();
@@ -40,6 +41,7 @@ export function main(){
     }
     lastResize = Date.now();
   }
+  */
 }
 
 function createInput() {
@@ -87,6 +89,15 @@ function createInput() {
   snvk.bufferSubData(colorBuffer, 0, colorData, 0, 6);
   //snvk.bindBuffer(colorBuffer, 1);
 
+  let surface = snvk.getSurface();
+
+  let swapchainCreateInfo = {
+    width: window.width,
+    height: window.height,
+    surface: surface,
+  }
+  let swapchain = snvk.createSwapchain(swapchainCreateInfo);
+
   let renderPipelineCreateInfo = {
     viewport: snvk.createViewport(),
     shaders: [vertShader, fragShader],
@@ -94,24 +105,55 @@ function createInput() {
     attributes: [posAttrib, colorAttrib],
   }
   let renderPipeline = snvk.createRenderPipeline(renderPipelineCreateInfo);
+
+  let framebuffers = [];
+  for (let i = 0;i<swapchain.imageCount;i++){
+    let framebufferCreateInfo = {
+      pipeline: renderPipeline,
+      imageView: swapchain.imageViews[i],
+      width: window.width,
+      height: window.height,
+    }
+    framebuffers[i] = snvk.createFramebuffer(framebufferCreateInfo);
+  }
+
+  //snvk.drawIndexed(pipeline,framebuffer);
+
+  let commandCreateInfo = {
+    indexBuffer: indexBuffer,
+    buffers: [posBuffer, colorBuffer],
+    pipeline: renderPipeline,
+    swapchain: swapchain,
+    framebuffers: framebuffers,
+  };
+
+  let command = snvk.createCommand(commandCreateInfo);
+  console.log("command")
   /*
   snvk.drawIndexed(renderPipeline);
   */
+  gswapchain = swapchain
+  drawFrame();
+}
+
+let gswapchain
+function drawFrame(){
+  //console.log("frame");
+  snvk.drawFrame(gswapchain);
 }
 
 function eventLoop() {
   if (window.shouldClose()) {
-    snvk.shutdownPipeline();
     snvk.shutdownVulkan();
   }
   else {
-    snvk.drawFrame();
     window.pollEvents();
+    drawFrame();
     setTimeout(eventLoop, 0);
+
+    /*
     if (lastResize !== 0 && Date.now() - lastResize > 100 && (window.width > 0 && window.height > 0)) {
       lastResize = 0;
-      //engine.startVulkan();
-      snvk.startPipeline();
     }
     if (Date.now() - fpsDate > 1000){
       window.title = title + ` (${fpsCount})`;
@@ -119,5 +161,6 @@ function eventLoop() {
       fpsCount = 0;
     }
     fpsCount++;
+    */
   }
 }

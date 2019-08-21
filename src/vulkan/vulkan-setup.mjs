@@ -24,7 +24,8 @@ export function createInstance() {
   this.assertVulkan(result);
 }
 
-export function getSurface(physicalDevice) {
+export function getSurface() {
+  let { physicalDevice } = this;
   this.surface = new VkSurfaceKHR();
   if (this.window.createSurface(this.instance, null, this.surface) !== 0)
     console.error("createSurface failed");
