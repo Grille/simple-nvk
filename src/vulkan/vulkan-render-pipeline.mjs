@@ -135,9 +135,9 @@ export function createRenderPipeline(createInfo) {
   this.assertVulkan(result);
 
   let handle = {
-    layout: pipelineLayout,
-    renderPass: renderPass,
-    pipeline: pipeline,
+    vkLayout: pipelineLayout,
+    vkRenderPass: renderPass,
+    vkPipeline: pipeline,
   }
   pushHandle(this.renderPipelineHandles, handle);
   return handle;
@@ -145,9 +145,9 @@ export function createRenderPipeline(createInfo) {
 
 export function destroyRenderPipeline(handle) {
   if (handle.id === -1) return;
-  vkDestroyPipeline(this.device, handle.pipeline, null);
-  vkDestroyRenderPass(this.device, handle.renderPass, null);
-  vkDestroyPipelineLayout(this.device, handle.layout, null);
+  vkDestroyPipeline(this.device, handle.vkPipeline, null);
+  vkDestroyRenderPass(this.device, handle.vkRenderPass, null);
+  vkDestroyPipelineLayout(this.device, handle.vkLayout, null);
   deleteHandle(this.renderPipelineHandles, handle);
 }
 

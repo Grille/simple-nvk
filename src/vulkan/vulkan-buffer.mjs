@@ -26,8 +26,8 @@ export function createBuffer(createInfo) {
 
   let bufferHandle = {
     id: -1,
-    host: hostBuffer,
-    local: localBuffer,
+    vksHost: hostBuffer,
+    vksLocal: localBuffer,
     usage: usage,
     length: length,
     size: size,
@@ -39,23 +39,7 @@ export function createBuffer(createInfo) {
 
   return bufferHandle;
 }
-export function bindBuffer(handle, location = -1) {
-  if (handle.usage === this.BUFFER_USAGE_INDEX) {
-    this.indexBufferHandle = handle;
-  }
-  else {
-    if (location !== -1) {
-      for (let i = 0; i < this.bufferHandles.length; i++) {
-        let handle = this.bufferHandles[i];
-        if (handle.location === location) {
-          handle.location = -1;
-        }
-      }
-    }
-    handle.location = location;
-  }
-  this.bufferChanged = true;
-}
+
 export function createVkBuffer(bufferSize,bufferUsageFlags,memoryPropertieFlags){
   let bufferInfo = new VkBufferCreateInfo();
   bufferInfo.size = bufferSize;
@@ -84,15 +68,15 @@ export function createVkBuffer(bufferSize,bufferUsageFlags,memoryPropertieFlags)
   vkBindBufferMemory(this.device, buffer, memory, 0n);
 
   return {
-    buffer: buffer,
-    memory: memory,
+    vkBuffer: buffer,
+    vkMemory: memory,
   }
 }
 export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null) {
   let dataPtr = { $: 0n };
   let { stride } = handle;
   if (length === null) length = (data.length / handle.size) | 0;
-  let result = vkMapMemory(this.device, handle.host.memory, offsetDst * stride, length * stride, 0, dataPtr);
+  let result = vkMapMemory(this.device, handle.vksHost.vkMemory, offsetDst * stride, length * stride, 0, dataPtr);
   this.assertVulkan(result);
 
   let buffer = ArrayBuffer.fromAddress(dataPtr.$, length * stride);
@@ -111,18 +95,18 @@ export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null)
   dstView.set(srcView, 0x0);
   */
   
-  vkUnmapMemory(this.device, handle.host.memory);
+  vkUnmapMemory(this.device, handle.vksHost.vkMemory);
 
-  this.copyVkBuffer(handle.host.buffer, handle.local.buffer, offsetDst * stride, length * stride);
+  this.copyVkBuffer(handle.vksHost.vkBuffer, handle.vksLocal.vkBuffer, offsetDst * stride, length * stride);
 }
 export function bufferReadData(handle, offset = 0, length = null) {
   let dataPtr = { $: 0n };
   let { stride } = handle;
   if (length === null) length = handle.length;
 
-  this.copyVkBuffer(handle.local.buffer, handle.host.buffer, offset * stride, length * stride);
+  this.copyVkBuffer(handle.vksLocal.vkBuffer, handle.vksHost.vkBuffer, offset * stride, length * stride);
 
-  let result = vkMapMemory(this.device, handle.host.memory, offset * stride, length * stride, 0, dataPtr);
+  let result = vkMapMemory(this.device, handle.vksHost.vkMemory, offset * stride, length * stride, 0, dataPtr);
   this.assertVulkan(result);
 
   let buffer = ArrayBuffer.fromAddress(dataPtr.$, length * stride);
@@ -130,7 +114,7 @@ export function bufferReadData(handle, offset = 0, length = null) {
   return buffer;
 }
 export function copyBuffer(srcHandle, dstHandle, offset, size) {
-  this.copyVkBuffer(srcHandle.local.buffer, dstHandle.local.buffer, offset, size);
+  this.copyVkBuffer(srcHandle.vksLocal.vkBuffer, dstHandle.vksLocal.vkBuffer, offset, size);
 }
 export function copyVkBuffer(src, dst, offset, size) {
   let commandBufferAllocateInfo = new VkCommandBufferAllocateInfo();
@@ -178,10 +162,10 @@ export function copyVkBuffer(src, dst, offset, size) {
 export function destroyBuffer(handle) {
   if (handle.id === -1) return;
   this.bufferChanged = true;
-  vkFreeMemory(this.device, handle.host.memory);
-  vkDestroyBuffer(this.device, handle.host.buffer, null);
-  vkFreeMemory(this.device, handle.local.memory);
-  vkDestroyBuffer(this.device, handle.local.buffer, null);
+  vkFreeMemory(this.device, handle.vksHost.vkMemory);
+  vkDestroyBuffer(this.device, handle.vksHost.vkBuffer, null);
+  vkFreeMemory(this.device, handle.vksLocal.vkMemory);
+  vkDestroyBuffer(this.device, handle.vksLocal.vkBuffer, null);
   deleteHandle(this.bufferHandles, handle);
 }
 export function getAttribute(buffer, location, type, size) {

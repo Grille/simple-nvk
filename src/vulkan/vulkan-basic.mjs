@@ -122,6 +122,4 @@ export function drawFrame(swapchain) {
   presentInfoKHR.pResults = null;
 
   vkQueuePresentKHR(this.queue, presentInfoKHR);
-
-  console.log("draw");
 }

@@ -9,9 +9,9 @@ export function createFramebuffer(createInfo) {
   let framebuffer = new VkFramebuffer();
 
   let framebufferCreateInfo = new VkFramebufferCreateInfo();
-  framebufferCreateInfo.renderPass = pipeline.renderPass;
+  framebufferCreateInfo.renderPass = pipeline.vkRenderPass;
   framebufferCreateInfo.attachmentCount = 1;
-  framebufferCreateInfo.pAttachments = [imageView.imageView];
+  framebufferCreateInfo.pAttachments = [imageView.vkImageView];
   framebufferCreateInfo.width = width;
   framebufferCreateInfo.height = height;
   framebufferCreateInfo.layers = 1;
@@ -20,7 +20,7 @@ export function createFramebuffer(createInfo) {
   this.assertVulkan(result);
 
   let handle = {
-    framebuffer: framebuffer,
+    vkFramebuffer: framebuffer,
     width: width,
     height: height,
   }
@@ -32,6 +32,6 @@ export function createFramebuffer(createInfo) {
 
 export function destroyFramebuffer(handle) {
   if (handle.id === -1) return
-  vkDestroyFramebuffer(this.device, handle.framebuffer, null);
+  vkDestroyFramebuffer(this.device, handle.vkFramebuffer, null);
   deleteHandle(this.framebufferHandles, handle);
 }

@@ -23,8 +23,8 @@ export function createCommand(createInfo) {
     this.assertVulkan(result);
 
     let renderPassBeginInfo = new VkRenderPassBeginInfo();
-    renderPassBeginInfo.renderPass = pipeline.renderPass;
-    renderPassBeginInfo.framebuffer = framebuffers[i].framebuffer;
+    renderPassBeginInfo.renderPass = pipeline.vkRenderPass;
+    renderPassBeginInfo.framebuffer = framebuffers[i].vkFramebuffer;
     renderPassBeginInfo.renderArea.offset.x = 0;
     renderPassBeginInfo.renderArea.offset.y = 0;
     renderPassBeginInfo.renderArea.extent.width = swapchain.width;
@@ -40,7 +40,7 @@ export function createCommand(createInfo) {
 
     vkCmdBeginRenderPass(cmdBuffer, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
+    vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vkPipeline);
 
 
     let viewport = new VkViewport();
@@ -70,7 +70,7 @@ export function createCommand(createInfo) {
     for (let i = 0; i < buffers.length; i++) {
       let handle = buffers[i];
       if (handle !== null && handle.id !== -1 && handle.location !== -1) {
-        vertexBuffers[id] = handle.local.buffer;
+        vertexBuffers[id] = handle.vksLocal.vkBuffer;
         length = handle.length;
         id += 1;
       }
@@ -79,7 +79,7 @@ export function createCommand(createInfo) {
     console.log(vertexBuffers.length);
 
     vkCmdBindVertexBuffers(cmdBuffer, 0, vertexBuffers.length, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer(cmdBuffer, indexBuffer.local.buffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindIndexBuffer(cmdBuffer, indexBuffer.vksLocal.vkBuffer, 0, VK_INDEX_TYPE_UINT32);
 
     vkCmdDrawIndexed(cmdBuffer, indexBuffer.length * indexBuffer.size, 1, 0, 0, 0);
     //vkCmdDraw(cmdBuffer, length, 1, 0, 0);

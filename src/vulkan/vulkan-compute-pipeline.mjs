@@ -11,7 +11,7 @@ export function createComputePipeline(createInfo){
 
   let pipelineLayoutInfo = new VkPipelineLayoutCreateInfo();
   pipelineLayoutInfo.setLayoutCount = 1;
-  pipelineLayoutInfo.pSetLayouts = [descriptors.layout];
+  pipelineLayoutInfo.pSetLayouts = [descriptors.vkSetLayout];
 
   let pipelineLayout = new VkPipelineLayout();
   let result = vkCreatePipelineLayout(this.device, pipelineLayoutInfo, null, pipelineLayout);
@@ -19,7 +19,7 @@ export function createComputePipeline(createInfo){
 
   let computePipelineInfo = new VkComputePipelineCreateInfo();
   computePipelineInfo.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-  computePipelineInfo.stage.module = shader.shader;
+  computePipelineInfo.stage.module = shader.vkShader;
   computePipelineInfo.stage.pName = "main";
   computePipelineInfo.stage.pSpecializationInfo = null;
   computePipelineInfo.layout = pipelineLayout;
@@ -29,9 +29,9 @@ export function createComputePipeline(createInfo){
   this.assertVulkan(result);
 
   let handle = {
-    storageDescriptors:descriptors,
-    pipelineLayout: pipelineLayout,
-    pipeline: pipeline,
+    vksStorageDescriptors:descriptors,
+    vkLayout: pipelineLayout,
+    vkPipeline: pipeline,
   };
 
   pushHandle(this.computePipelineHandles, handle);
@@ -41,10 +41,10 @@ export function createComputePipeline(createInfo){
 }
 export function destroyComputePipeline(handle) {
   if (handle.id === -1) return;
-  vkDestroyDescriptorSetLayout(this.device, handle.storageDescriptors.layout, null);
-  vkDestroyPipelineLayout(this.device, handle.pipelineLayout, null);
-  vkDestroyPipeline(this.device, handle.pipeline, null);
-  vkDestroyDescriptorPool(this.device, handle.storageDescriptors.pool, null);
+  vkDestroyDescriptorSetLayout(this.device, handle.vksStorageDescriptors.vkSetLayout, null);
+  vkDestroyPipelineLayout(this.device, handle.vkLayout, null);
+  vkDestroyPipeline(this.device, handle.vkPipeline, null);
+  vkDestroyDescriptorPool(this.device, handle.vksStorageDescriptors.vkPool, null);
   deleteHandle(this.computePipelineHandles, handle);
 }
 
@@ -67,8 +67,8 @@ export function compute(pipeline, x = 1, y = 1, z = 1) {
   result = vkBeginCommandBuffer(commandBuffer, cmdBufferBeginInfo);
   this.assertVulkan(result);
 
-  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline);
-  vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipelineLayout, 0, 1, [pipeline.storageDescriptors.set], 0, null);
+  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.vkPipeline);
+  vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.vkLayout, 0, 1, [pipeline.vksStorageDescriptors.vkSet], 0, null);
 
 
 

@@ -24,7 +24,7 @@ export function createImageView(createInfo){
   vkCreateImageView(this.device, imageViewCreateInfo, null, imageView);
 
   let handle = {
-    imageView:imageView,
+    vkImageView:imageView,
   }
 
   pushHandle(this.imageViewHandles, handle);
@@ -34,6 +34,6 @@ export function createImageView(createInfo){
 
 export function destroyImageView(handle){
   if (handle.id === -1) return
-  vkDestroyImageView(this.device, handle.imageView, null);
+  vkDestroyImageView(this.device, handle.vkImageView, null);
   deleteHandle(this.framebufferHandles, handle);
 }

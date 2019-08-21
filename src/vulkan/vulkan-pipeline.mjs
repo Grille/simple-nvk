@@ -52,7 +52,7 @@ export function getVkBindingDescriptors(handles, type, flags) {
     let { binding, buffer } = handles[i];
 
     let bufferInfo = new VkDescriptorBufferInfo();
-    bufferInfo.buffer = buffer.local.buffer;
+    bufferInfo.buffer = buffer.vksLocal.vkBuffer;
     bufferInfo.offset = 0n;
     bufferInfo.range = buffer.length * buffer.stride;
 
@@ -70,9 +70,9 @@ export function getVkBindingDescriptors(handles, type, flags) {
 
 
   return {
-    pool: descriptorPool,
-    layout: descriptorSetLayout,
-    set: descriptorSet,
+    vkPool: descriptorPool,
+    vkSetLayout: descriptorSetLayout,
+    vkSet: descriptorSet,
   }
 }
 
@@ -92,7 +92,7 @@ export function createShaderInput(handles) {
 
       let shaderStage = new VkPipelineShaderStageCreateInfo();
       shaderStage.stage = vkStage;
-      shaderStage.module = handle.shader;
+      shaderStage.module = handle.vkShader;
       shaderStage.pName = "main";
       shaderStage.pSpecializationInfo = null;
 

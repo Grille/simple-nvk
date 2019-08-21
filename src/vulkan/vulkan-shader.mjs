@@ -41,7 +41,7 @@ export function createShader(code, srcType, stage) {
   let handle = {
     id: -1,
     stage: stage,
-    shader: shaderModule,
+    vkShader: shaderModule,
   }
 
   pushHandle(this.shaderHandles, handle);
@@ -57,6 +57,6 @@ export function bindShader(handle, stage = handle.stage) {
 export function destroyShader(handle) {
   if (handle.id === -1) return;
   this.shaderChanged = true;
-  vkDestroyShaderModule(this.device, handle.shader, null);
+  vkDestroyShaderModule(this.device, handle.vkShader, null);
   deleteHandle(this.shaderHandles, handle);
 }
