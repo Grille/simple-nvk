@@ -18,7 +18,12 @@ export function main() {
 
   time("  vk setup...")
   let compSrc = snvk.loadShaderSrc(`./src/shader/shader.comp`);
-  let compShader = snvk.createShader(compSrc, snvk.SHADER_SRC_GLSL, snvk.SHADER_STAGE_COMPUTE);
+  let compCreateInfo = {
+    source: compSrc,
+    format: snvk.SHADER_SRC_GLSL,
+    stage: snvk.SHADER_STAGE_COMPUTE,
+  }
+  let compShader = snvk.createShader(compCreateInfo);
   //snvk.bindShader(vertShader);
 
   let storageBufferCreateInfo = {

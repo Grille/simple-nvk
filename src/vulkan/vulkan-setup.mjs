@@ -1,5 +1,5 @@
 import nvk from "nvk"
-import { InitializedArray } from "./utils.mjs"
+import { pushHandle, deleteHandle,InitializedArray } from "./utils.mjs"
 
 export function createInstance() {
   let validationLayers = ["VK_LAYER_LUNARG_standard_validation", "VK_LAYER_LUNARG_parameter_validation"];
@@ -24,27 +24,43 @@ export function createInstance() {
   this.assertVulkan(result);
 }
 
-export function getSurface() {
+export let surfaceHandles = [];
+
+export function createSurface() {
   let { physicalDevice } = this;
-  this.surface = new VkSurfaceKHR();
-  if (this.window.createSurface(this.instance, null, this.surface) !== 0)
+  let surface = new VkSurfaceKHR();
+  if (this.window.createSurface(this.instance, null, surface) !== 0)
     console.error("createSurface failed");
 
   let surfaceSupport = { $: false };
-  vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, 0, this.surface, surfaceSupport);
-  console.log("\nsurfaceSupport: " + (surfaceSupport.$ === 1));
+  vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, 0, surface, surfaceSupport);
+  //console.log("\nsurfaceSupport: " + (surfaceSupport.$ === 1));
 
   let surfaceCapabilities = new VkSurfaceCapabilitiesKHR()
-  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, this.surface, surfaceCapabilities);
+  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, surfaceCapabilities);
 
   let surfaceFormatCount = { $: 0 };
-  vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, this.surface, surfaceFormatCount, null);
+  vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, surfaceFormatCount, null);
   let surfaceFormats = new InitializedArray(VkSurfaceFormatKHR, surfaceFormatCount.$);
-  vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, this.surface, surfaceFormatCount, surfaceFormats);
+  vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, surfaceFormatCount, surfaceFormats);
+  /*
   console.log("\nsurfaceFormats count: " + surfaceFormats.length);
-  for (let i = 0; i < surfaceFormats.length; i++)
+  for (let i = 0; i < surfaceFormats.length; i++){
     console.log("format: " + surfaceFormats[i].format);
-  return this.surface;
+  }
+  */
+  let handle = {
+    id: -1,
+    vkSurface: surface,
+  }
+  pushHandle(this.surfaceHandles, handle);
+  return handle;
+}
+
+export function destroySurface(handle) {
+  if (handle.id === -1) return;
+  vkDestroySurfaceKHR(this.instance, handle.vkSurface, null);
+  deleteHandle(this.surfaceHandles, handle)
 }
 
 

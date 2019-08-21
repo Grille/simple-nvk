@@ -10,9 +10,10 @@ export let shaderStages = new Array(10).fill(null);
 export function loadShaderSrc(path) {
   return fs.readFileSync(path);
 }
-export function createShader(code, srcType, stage) {
+export function createShader(createInfo) {
+  let { source, format, stage } = createInfo;
   let uIntCode = null
-  if (srcType === this.SHADER_SRC_GLSL) {
+  if (format === this.SHADER_SRC_GLSL) {
     let extension = "";
     switch (stage) {
       case this.SHADER_STAGE_VERTEX: extension = "vert"; break;
@@ -20,13 +21,13 @@ export function createShader(code, srcType, stage) {
       case this.SHADER_STAGE_COMPUTE: extension = "comp"; break;
     }
     let spirvCode = GLSL.toSPIRVSync({
-      source: code,
+      source: source,
       extension: extension
     }).output;
     uIntCode = new Uint8Array(spirvCode);
   }
   else {
-    uIntCode = new Uint8Array(code);
+    uIntCode = new Uint8Array(source);
   }
 
   let shaderModuleCreateInfo = new VkShaderModuleCreateInfo({
@@ -47,11 +48,6 @@ export function createShader(code, srcType, stage) {
   pushHandle(this.shaderHandles, handle);
 
   return handle;
-}
-export function bindShader(handle, stage = handle.stage) {
-  if (this.shaderStages[stage] !== null) this.shaderStages[stage].stage = -1;
-  handle.stage = stage;
-  this.shaderStages[stage] = handle;
 }
 
 export function destroyShader(handle) {

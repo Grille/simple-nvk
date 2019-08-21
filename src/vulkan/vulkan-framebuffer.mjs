@@ -4,12 +4,12 @@ import { pushHandle, deleteHandle, InitializedArray } from "./utils.mjs"
 export let framebufferHandles = [];
 
 export function createFramebuffer(createInfo) {
-  let { pipeline, imageView, width, height } = createInfo;
+  let { renderPass, imageView, width, height } = createInfo;
 
   let framebuffer = new VkFramebuffer();
 
   let framebufferCreateInfo = new VkFramebufferCreateInfo();
-  framebufferCreateInfo.renderPass = pipeline.vkRenderPass;
+  framebufferCreateInfo.renderPass = renderPass.vkRenderPass;
   framebufferCreateInfo.attachmentCount = 1;
   framebufferCreateInfo.pAttachments = [imageView.vkImageView];
   framebufferCreateInfo.width = width;
@@ -20,6 +20,7 @@ export function createFramebuffer(createInfo) {
   this.assertVulkan(result);
 
   let handle = {
+    id: -1,
     vkFramebuffer: framebuffer,
     width: width,
     height: height,

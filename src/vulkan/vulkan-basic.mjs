@@ -100,7 +100,7 @@ export function drawFrame(swapchain) {
   //if (!this.vulkanReady) return;
 
   let imageIndex = { $: 0 };
-  vkAcquireNextImageKHR(this.device, swapchain.swapchain, 1E5, this.semaphores.imageAviable, null, imageIndex);
+  vkAcquireNextImageKHR(this.device, swapchain.vkSwapchain, 1E5, this.semaphores.imageAviable, null, imageIndex);
 
   let submitInfo = new VkSubmitInfo();
   submitInfo.waitSemaphoreCount = 1;
@@ -117,7 +117,7 @@ export function drawFrame(swapchain) {
   presentInfoKHR.waitSemaphoreCount = 1;
   presentInfoKHR.pWaitSemaphores = [this.semaphores.renderingDone];
   presentInfoKHR.swapchainCount = 1;
-  presentInfoKHR.pSwapchains = [swapchain.swapchain];
+  presentInfoKHR.pSwapchains = [swapchain.vkSwapchain];
   presentInfoKHR.pImageIndices = new Uint32Array([imageIndex.$]);
   presentInfoKHR.pResults = null;
 

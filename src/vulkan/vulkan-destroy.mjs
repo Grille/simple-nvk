@@ -29,30 +29,21 @@ function destroyArray(arg0, array, func) {
     }
   }
 }
-export function destroySwapchain(){
+export function waitIdle(){
   vkDeviceWaitIdle(this.device);
-}
-
-export function shutdownPipeline() {
-  this.vulkanReady = false;
-
-  vkDeviceWaitIdle(this.device);
-
-  //vkFreeCommandBuffers(this.device, this.commandPool, this.commandBuffers.length, this.commandBuffers);
-  destroyHandles(this.framebufferHandles, (a) => this.destroyFramebuffer(a));
-  destroyHandles(this.renderPipelineHandles, (a) => this.destroyRenderPipeline(a));
-  destroyHandles(this.computePipelineHandles, (a) => this.destroyComputePipeline(a));
-  destroyHandles(this.swapchainHandles, (a) => this.destroySwapchain(a));
-  destroyHandles(this.imageViewHandles, (a) => this.destroyImageView(a));
-
-  destroy(this.instance, this.surface, vkDestroySurfaceKHR);
-  this.surface = null;
 }
 
 export function shutdownVulkan() {
   vkDeviceWaitIdle(this.device);
 
-  this.shutdownPipeline()
+  destroyHandles(this.framebufferHandles, (a) => this.destroyFramebuffer(a));
+  destroyHandles(this.imageViewHandles, (a) => this.destroyImageView(a));
+  destroyHandles(this.swapchainHandles, (a) => this.destroySwapchain(a));
+  destroyHandles(this.surfaceHandles, (a) => this.destroySurface(a));
+
+  destroyHandles(this.renderPipelineHandles, (a) => this.destroyRenderPipeline(a));
+  destroyHandles(this.renderPassHandles, (a) => this.destroyRenderPass(a));
+  destroyHandles(this.computePipelineHandles, (a) => this.destroyComputePipeline(a));
 
   destroy(this.device, this.commandPool, vkDestroyCommandPool);
   this.commandPool = null;

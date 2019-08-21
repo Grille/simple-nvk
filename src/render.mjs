@@ -8,6 +8,19 @@ let snvk = null;
 let window = null;
 let title = "sNVK example";
 
+let buffers = null;
+let shaders = null;
+let bindings = null;
+let attributes = null;
+
+let surface = null;
+let renderPipeline = null;
+let swapchain = null;
+let framebuffers = null;
+let command = null;
+
+let ready = false;
+
 let posData = new Float32Array([
   -0.5, -0.5,
   0.5, 0.5,
@@ -25,35 +38,47 @@ let indexData = new Uint32Array([
   0, 3, 1,
 ])
 
+
 export function main(){
   snvk = new Vulkan();
   snvk.startWindow({ width: 480, height: 320, title });
   window = snvk.window;
   snvk.startVulkan();
   createInput();
-  //snvk.startPipeline();
+  createPipeline();
+
   eventLoop();
-  /*
+  
   window.onresize = () => {
-    if (snvk.vulkanReady){
-      snvk.shutdownPipeline();
-      //engine.shutdownVulkan();
+    if (ready){
+      destroyPipline();
     }
     lastResize = Date.now();
   }
-  */
+  
 }
 
 function createInput() {
+  console.log("setup...");
   let vertSrc = snvk.loadShaderSrc(`./src/shader/shader.vert`);
   let fragSrc = snvk.loadShaderSrc(`./src/shader/shader.frag`);
 
   //snvk.bindShader(compShader);
 
-  let vertShader = snvk.createShader(vertSrc, snvk.SHADER_SRC_GLSL, snvk.SHADER_STAGE_VERTEX);
-  //snvk.bindShader(vertShader);
-  let fragShader = snvk.createShader(fragSrc, snvk.SHADER_SRC_GLSL, snvk.SHADER_STAGE_FRAGMENT);
-  //snvk.bindShader(fragShader);
+  let vertCreateInfo = {
+    source: vertSrc,
+    format: snvk.SHADER_SRC_GLSL,
+    stage: snvk.SHADER_STAGE_VERTEX,
+  }
+  let fragCreateInfo = {
+    source: fragSrc,
+    format: snvk.SHADER_SRC_GLSL,
+    stage: snvk.SHADER_STAGE_FRAGMENT,
+  }
+
+  let vertShader = snvk.createShader(vertCreateInfo);
+  let fragShader = snvk.createShader(fragCreateInfo);
+
 
   let indexBufferCreateInfo = {
     type: snvk.TYPE_UINT32,
@@ -89,57 +114,73 @@ function createInput() {
   snvk.bufferSubData(colorBuffer, 0, colorData, 0, 6);
   //snvk.bindBuffer(colorBuffer, 1);
 
-  let surface = snvk.getSurface();
+  buffers = [indexBuffer, posBuffer, colorBuffer];
+  shaders = [vertShader, fragShader];
+  bindings = [indexBinding];
+  attributes = [posAttrib, colorAttrib];
+
+}
+function createPipeline() {
+  console.log("start...");
+  let renderPass = snvk.createRenderPass();
+
+  let renderPipelineCreateInfo = {
+    renderPass: renderPass,
+    viewport: snvk.createViewport(),
+    shaders: shaders,
+    bindings: bindings,
+    attributes: attributes,
+  }
+  renderPipeline = snvk.createRenderPipeline(renderPipelineCreateInfo);
+
+  surface = snvk.createSurface();
 
   let swapchainCreateInfo = {
     width: window.width,
     height: window.height,
+    renderPass: renderPass,
     surface: surface,
   }
-  let swapchain = snvk.createSwapchain(swapchainCreateInfo);
-
-  let renderPipelineCreateInfo = {
-    viewport: snvk.createViewport(),
-    shaders: [vertShader, fragShader],
-    bindings: [indexBinding],
-    attributes: [posAttrib, colorAttrib],
-  }
-  let renderPipeline = snvk.createRenderPipeline(renderPipelineCreateInfo);
-
-  let framebuffers = [];
-  for (let i = 0;i<swapchain.imageCount;i++){
-    let framebufferCreateInfo = {
-      pipeline: renderPipeline,
-      imageView: swapchain.imageViews[i],
-      width: window.width,
-      height: window.height,
-    }
-    framebuffers[i] = snvk.createFramebuffer(framebufferCreateInfo);
-  }
+  swapchain = snvk.createSwapchain(swapchainCreateInfo);
 
   //snvk.drawIndexed(pipeline,framebuffer);
 
   let commandCreateInfo = {
-    indexBuffer: indexBuffer,
-    buffers: [posBuffer, colorBuffer],
+    indexBuffer: buffers[0],
+    buffers: [buffers[1], buffers[2]],
     pipeline: renderPipeline,
     swapchain: swapchain,
-    framebuffers: framebuffers,
+    framebuffers: swapchain.framebuffers,
   };
 
-  let command = snvk.createCommand(commandCreateInfo);
-  console.log("command")
-  /*
-  snvk.drawIndexed(renderPipeline);
-  */
-  gswapchain = swapchain
-  drawFrame();
+  command = snvk.createCommand(commandCreateInfo);
+  ready = true;
+  console.log("started");
 }
 
-let gswapchain
+function destroyPipline(){
+  console.log("destroy...");
+  ready = false;
+
+  snvk.waitIdle();
+  /*
+  for (let i = 0;i<framebuffers.length;i++){
+    snvk.destroyFramebuffer(framebuffers[i]);
+  }
+  */
+  snvk.destroySwapchain(swapchain);
+  /*
+  snvk.destroyRenderPipeline(renderPipeline);
+  snvk.destroyRenderPipeline(renderPipeline);
+  snvk.destroyRenderPipeline(renderPipeline);
+  */
+  console.log("destroyed");
+}
+
 function drawFrame(){
-  //console.log("frame");
-  snvk.drawFrame(gswapchain);
+  let framebuffer = snvk.getNextSwapchainFramebuffer(swapchain);
+  console.log(framebuffer.id);
+  snvk.drawFrame(swapchain);
 }
 
 function eventLoop() {
@@ -148,19 +189,19 @@ function eventLoop() {
   }
   else {
     window.pollEvents();
-    drawFrame();
-    setTimeout(eventLoop, 0);
-
-    /*
+    if (ready) {
+      drawFrame();
+    }
     if (lastResize !== 0 && Date.now() - lastResize > 100 && (window.width > 0 && window.height > 0)) {
       lastResize = 0;
+      createPipeline();
     }
-    if (Date.now() - fpsDate > 1000){
+    if (Date.now() - fpsDate > 1000) {
       window.title = title + ` (${fpsCount})`;
       fpsDate = Date.now();
       fpsCount = 0;
     }
     fpsCount++;
-    */
+    setTimeout(eventLoop, 0);
   }
 }
