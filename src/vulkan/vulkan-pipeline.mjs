@@ -102,37 +102,35 @@ export function createShaderInput(handles) {
   }
   return shaderStages;
 }
-export function createBufferInput(handles) {
+export function createBufferInput(attributes) {
   let vertexBindings = [], vertexAttributes = [];
   let id = 0;
   
-  for (let i = 0; i < handles.length; i++) {
-    let handle = handles[i];
-    if (handle !== null && handle.id !== -1 && handle.location !== -1) {
+  for (let i = 0; i < attributes.length; i++) {
+    let attribute = attributes[i];
+    //if (handle !== null && handle.id !== -1 && handle.location !== -1) {
 
-      let binding = new VkVertexInputBindingDescription();
-      binding.binding = handle.location;
-      binding.stride = handle.stride;
-      binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX; 
-    
-      let attribute = new VkVertexInputAttributeDescription();
-      attribute.location = handle.location;
-      attribute.binding = handle.location;
-      attribute.format = handle.format;
-      attribute.offset = 0;
+    let vertexBinding = new VkVertexInputBindingDescription();
+    vertexBinding.binding = attribute.location;
+    vertexBinding.stride = attribute.stride;
+    vertexBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-      vertexBindings[id] = binding;
-      vertexAttributes[id] = attribute;
-      id += 1;
-    }
+    let vertexAttribute = new VkVertexInputAttributeDescription();
+    vertexAttribute.location = attribute.location;
+    vertexAttribute.binding = attribute.location;
+    vertexAttribute.format = attribute.format;
+    vertexAttribute.offset = 0;
+
+    vertexBindings[id] = vertexBinding;
+    vertexAttributes[id] = vertexAttribute;
+    id += 1;
+    //}
   }
 
   let vertex = new VkPipelineVertexInputStateCreateInfo({});
   if (vertexBindings.length > 0) {
     vertex.vertexBindingDescriptionCount = vertexBindings.length;
     vertex.pVertexBindingDescriptions = vertexBindings;
-  }
-  if (vertexAttributes.length > 0) {
     vertex.vertexAttributeDescriptionCount = vertexAttributes.length;
     vertex.pVertexAttributeDescriptions = vertexAttributes;
   }

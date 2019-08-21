@@ -6,14 +6,12 @@ export let bufferHandles = [];
 export let indexBufferHandle = null;
 
 export function createBuffer(createInfo) {
-  let { location, size, type, length, usage, readable = false} = createInfo;
+  let { size, type, length, usage, readable = false} = createInfo;
 
   let vkUsageBits = this.getVkBufferUsageBits(usage, readable);
 
-  let stride = type.size * size;
+  let stride = (type >> 4) * size;
   let bufferSize = stride * length;
-
-  let format = this.findVkFormat(type.size, size, type.type);
 
   let hostBuffer = this.createVkBuffer(
     bufferSize,
@@ -28,11 +26,9 @@ export function createBuffer(createInfo) {
 
   let bufferHandle = {
     id: -1,
-    location: -1,
     host: hostBuffer,
     local: localBuffer,
     usage: usage,
-    format: format,
     length: length,
     size: size,
     stride: stride,
@@ -188,6 +184,22 @@ export function destroyBuffer(handle) {
   vkDestroyBuffer(this.device, handle.local.buffer, null);
   deleteHandle(this.bufferHandles, handle);
 }
+export function getAttribute(buffer, location, type, size) {
+  let format = this.findVkFormat(type >> 4, size, type & 15);
+  let stride = (type >> 4) * size;
+  return {
+    buffer,
+    location,
+    format,
+    stride,
+  }
+}
+export function getBinding(buffer, binding) {
+  return {
+    buffer,
+    binding,
+  }
+}
 export function findVkFormat(size, vec, type) {
   let enumName = `VK_FORMAT_`
   size*=8;
@@ -202,7 +214,6 @@ export function findVkFormat(size, vec, type) {
     case this.INT: enumName += `_SINT`; break;
     case this.FLOAT: enumName += `_SFLOAT`; break;
   }
-  //console.log(enumName)
   return nvk[enumName];
 }
 export function getVkBufferUsageBits(usage, readable) {
@@ -216,6 +227,7 @@ export function getVkBufferUsageBits(usage, readable) {
     case this.BUFFER_USAGE_VERTEX: local |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT; break;
     case this.BUFFER_USAGE_INDEX: local |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT; break;
     case this.BUFFER_USAGE_STORAGE: local |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT; break;
+    case this.BUFFER_USAGE_UNIFORM: local |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT; break;
   }
   return { host, local };
 }

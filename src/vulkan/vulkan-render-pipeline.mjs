@@ -2,13 +2,13 @@ import nvk from "nvk"
 import { pushHandle, deleteHandle } from "./utils.mjs";
 //export let pipelineHandle = null;
 
-export let pipelineHandles = [];
+export let renderPipelineHandles = [];
 
 export function createRenderPipeline(createInfo) {
   let result;
-  let { shaders, indexBuffer, vertexBuffers, viewport } = createInfo;
+  let { shaders, bindings, attributes, viewport } = createInfo;
   let shaderInputInfo = this.createShaderInput(shaders);
-  let bufferInputInfo = this.createBufferInput(vertexBuffers);
+  let bufferInputInfo = this.createBufferInput(attributes);
 
   let pipelineLayout = new VkPipelineLayout();
   {
@@ -139,19 +139,19 @@ export function createRenderPipeline(createInfo) {
     renderPass: renderPass,
     pipeline: pipeline,
   }
-  pushHandle(this.pipelineHandles, handle);
+  pushHandle(this.renderPipelineHandles, handle);
   return handle;
 }
 
-export function destroyPipeline(handle) {
+export function destroyRenderPipeline(handle) {
   if (handle.id === -1) return;
   vkDestroyPipeline(this.device, handle.pipeline, null);
   vkDestroyRenderPass(this.device, handle.renderPass, null);
   vkDestroyPipelineLayout(this.device, handle.layout, null);
-  deleteHandle(this.pipelineHandles, handle);
+  deleteHandle(this.renderPipelineHandles, handle);
 }
 
 export function drawIndexed(pipeline){
-  
+
 }
 //export function pipelineSetViewport(pipeline,viewport);

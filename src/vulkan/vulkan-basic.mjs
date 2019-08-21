@@ -32,6 +32,9 @@ export function log(text) {
 export function startWindow(obj) {
   this.window = new VulkanWindow(obj);
 }
+export function closeWindow(){
+  this.window.close();
+};
 
 export function startVulkan() {
 
@@ -57,8 +60,6 @@ export function startVulkan() {
   this.semaphores.renderingDone = new VkSemaphore();
   vkCreateSemaphore(this.device, semaphoreCreateInfo, null, this.semaphores.imageAviable);
   vkCreateSemaphore(this.device, semaphoreCreateInfo, null, this.semaphores.renderingDone);
-
-  this.log("vulkan started stage 1");
 }
 
 export function startPipeline() {
@@ -93,8 +94,6 @@ export function startPipeline() {
   this.createCommand(this.queueFamily);
 
   this.vulkanReady = true;
-
-  this.log("vulkan started stage 2");
 }
 
 export function drawFrame() {

@@ -38,11 +38,11 @@ export function shutdownPipeline() {
 
   vkDeviceWaitIdle(this.device);
 
-  vkFreeCommandBuffers(this.device, this.commandPool, this.commandBuffers.length, this.commandBuffers);
+  //vkFreeCommandBuffers(this.device, this.commandPool, this.commandBuffers.length, this.commandBuffers);
 
   destroyArray(this.device, this.framebuffers, vkDestroyFramebuffer);
 
-  destroyHandles(this.pipelineHandles, (a) => this.destroyPipeline(a));
+  destroyHandles(this.renderPipelineHandles, (a) => this.destroyRenderPipeline(a));
   destroyHandles(this.computePipelineHandles, (a) => this.destroyComputePipeline(a));
 
   destroyArray(this.device, this.swapImageViews, vkDestroyImageView);
@@ -52,12 +52,12 @@ export function shutdownPipeline() {
 
   destroy(this.instance, this.surface, vkDestroySurfaceKHR);
   this.surface = null;
-
-  this.log("vulkan destroyed stage 2");
 }
 
 export function shutdownVulkan() {
   vkDeviceWaitIdle(this.device);
+
+  this.shutdownPipeline()
 
   destroy(this.device, this.commandPool, vkDestroyCommandPool);
   this.commandPool = null;
@@ -69,6 +69,4 @@ export function shutdownVulkan() {
 
   vkDestroyDevice(this.device, null);
   vkDestroyInstance(this.instance, null);
-
-  this.log("vulkan destroyed stage 1");
 }

@@ -5,9 +5,9 @@ import { pushHandle, deleteHandle } from "./utils.mjs";
 export let computePipelineHandles = [];
 
 export function createComputePipeline(createInfo){
-  let { shader, storageBuffers = []} = createInfo;
+  let { shader, bindings = []} = createInfo;
 
-  let descriptors = this.getVkBindingDescriptors(storageBuffers, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT);
+  let descriptors = this.getVkBindingDescriptors(bindings, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT);
 
   let pipelineLayoutInfo = new VkPipelineLayoutCreateInfo();
   pipelineLayoutInfo.setLayoutCount = 1;
