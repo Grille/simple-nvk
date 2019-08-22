@@ -53,6 +53,7 @@ export function createSwapchain(createInfo) {
     id: -1,
     vkSwapchain: swapchain,
     imageViews: swapImageViews,
+    imageIndex: 0,
     framebuffers: framebuffers,
     imageCount: swapchainImageCount.$,
     width: width,
@@ -67,7 +68,19 @@ export function createSwapchain(createInfo) {
 export function getNextSwapchainFramebuffer(swapchain){
   let imageIndex = { $: 0 };
   vkAcquireNextImageKHR(this.device, swapchain.vkSwapchain, 1E5, this.semaphores.imageAviable, null, imageIndex);
-  return swapchain.framebuffers[imageIndex.$];
+  return swapchain.framebuffers[swapchain.imageIndex = imageIndex.$];
+}
+
+export function present(swapchain){
+  let presentInfoKHR = new VkPresentInfoKHR();
+  presentInfoKHR.waitSemaphoreCount = 1;
+  presentInfoKHR.pWaitSemaphores = [this.semaphores.renderingDone];
+  presentInfoKHR.swapchainCount = 1;
+  presentInfoKHR.pSwapchains = [swapchain.vkSwapchain];
+  presentInfoKHR.pImageIndices = new Uint32Array([swapchain.imageIndex]);
+  presentInfoKHR.pResults = null;
+
+  vkQueuePresentKHR(this.queue, presentInfoKHR);
 }
 
 export function destroySwapchain(handle) {

@@ -14,9 +14,9 @@ let bindings = null;
 let attributes = null;
 
 let surface = null;
+let renderPass = null;
 let renderPipeline = null;
 let swapchain = null;
-let framebuffers = null;
 let command = null;
 
 let ready = false;
@@ -43,9 +43,14 @@ export function main(){
   snvk = new Vulkan();
   snvk.startWindow({ width: 480, height: 320, title });
   window = snvk.window;
+
+  console.log("start...");
+
   snvk.startVulkan();
   createInput();
   createPipeline();
+
+  console.log("started");
 
   eventLoop();
   
@@ -55,11 +60,11 @@ export function main(){
     }
     lastResize = Date.now();
   }
-  
+
+  console.log("finish.");
 }
 
 function createInput() {
-  console.log("setup...");
   let vertSrc = snvk.loadShaderSrc(`./src/shader/shader.vert`);
   let fragSrc = snvk.loadShaderSrc(`./src/shader/shader.frag`);
 
@@ -113,8 +118,7 @@ function createInput() {
 
 }
 function createPipeline() {
-  console.log("start...");
-  let renderPass = snvk.createRenderPass();
+  renderPass = snvk.createRenderPass();
 
   let renderPipelineCreateInfo = {
     renderPass: renderPass,
@@ -147,31 +151,25 @@ function createPipeline() {
 
   command = snvk.createCommand(commandCreateInfo);
   ready = true;
-  console.log("started");
 }
 
 function destroyPipline(){
-  console.log("destroy...");
   ready = false;
 
   snvk.waitIdle();
-  /*
-  for (let i = 0;i<framebuffers.length;i++){
-    snvk.destroyFramebuffer(framebuffers[i]);
-  }
-  */
+
   snvk.destroySwapchain(swapchain);
-  /*
+  snvk.destroySurface(surface);
   snvk.destroyRenderPipeline(renderPipeline);
-  snvk.destroyRenderPipeline(renderPipeline);
-  snvk.destroyRenderPipeline(renderPipeline);
-  */
-  console.log("destroyed");
+  snvk.destroyRenderPass(renderPass);
+  
 }
 
-function drawFrame(){
-  //let framebuffer = snvk.getNextSwapchainFramebuffer(swapchain);
-  snvk.drawFrame(swapchain);
+function drawFrame() {
+  let framebuffer = snvk.getNextSwapchainFramebuffer(swapchain);
+  snvk.drawIndexed(renderPipeline, framebuffer, buffers[0]);
+  snvk.present(swapchain);
+  //snvk.drawFrame(swapchain);
 }
 
 function eventLoop() {

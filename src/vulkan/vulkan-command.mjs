@@ -76,8 +76,6 @@ export function createCommand(createInfo) {
       }
     }
 
-    console.log(vertexBuffers.length);
-
     vkCmdBindVertexBuffers(cmdBuffer, 0, vertexBuffers.length, vertexBuffers, offsets);
     vkCmdBindIndexBuffer(cmdBuffer, indexBuffer.vksLocal.vkBuffer, 0, VK_INDEX_TYPE_UINT32);
 

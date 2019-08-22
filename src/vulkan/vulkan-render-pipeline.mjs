@@ -66,11 +66,11 @@ export function createRenderPass(createInfo) {
 export function destroyRenderPass(handle){
   if (handle.id===-1)return;
   vkDestroyRenderPass(this.device, handle.vkRenderPass, null);
-  deleteHandle(this.renderPipelineHandles, handle);
+  deleteHandle(this.renderPassHandles, handle);
 }
 export function createRenderPipeline(createInfo) {
   let result;
-  let { renderPass,shaders, bindings, attributes, viewport = null } = createInfo;
+  let { renderPass, shaders, bindings, attributes, viewport = null } = createInfo;
 
   let vertexBindings = [];
   for (let i = 0; i < bindings.length; i++) {
@@ -160,6 +160,7 @@ export function createRenderPipeline(createInfo) {
     vkLayout: pipelineLayout,
     vkRenderPass: renderPass.vkRenderPass,
     vkPipeline: pipeline,
+    vertexBindings:vertexBindings,
   }
   pushHandle(this.renderPipelineHandles, handle);
   return handle;
@@ -172,7 +173,101 @@ export function destroyRenderPipeline(handle) {
   deleteHandle(this.renderPipelineHandles, handle);
 }
 
-export function drawIndexed(pipeline){
+export function drawIndexed(pipeline, frambuffer, indexBuffer) {
+
+  let commandBufferAllocateInfo = new VkCommandBufferAllocateInfo();
+  commandBufferAllocateInfo.commandPool = this.commandPool;
+  commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  commandBufferAllocateInfo.commandBufferCount = 1;
+
+  this.commandBuffers = [new VkCommandBuffer()];
+  let result = vkAllocateCommandBuffers(this.device, commandBufferAllocateInfo, this.commandBuffers);
+  this.assertVulkan(result);
+
+  let commandBufferBeginInfo = new VkCommandBufferBeginInfo();
+  commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+  commandBufferBeginInfo.pInheritanceInfo = null;
+
+  let cmdBuffer = this.commandBuffers[0];
+  result = vkBeginCommandBuffer(cmdBuffer, commandBufferBeginInfo);
+  this.assertVulkan(result);
+
+  let renderPassBeginInfo = new VkRenderPassBeginInfo();
+  renderPassBeginInfo.renderPass = pipeline.vkRenderPass;
+  renderPassBeginInfo.framebuffer = frambuffer.vkFramebuffer;
+  renderPassBeginInfo.renderArea.offset.x = 0;
+  renderPassBeginInfo.renderArea.offset.y = 0;
+  renderPassBeginInfo.renderArea.extent.width = frambuffer.width;
+  renderPassBeginInfo.renderArea.extent.height = frambuffer.height;
+  renderPassBeginInfo.clearValueCount = 1;
+  renderPassBeginInfo.pClearValues = [new VkClearValue({
+    color: new VkClearColorValue({
+      float32: [0, 0, 0.5, 1],
+    }),
+    depthStencil: null,
+  })];
+
+
+  vkCmdBeginRenderPass(cmdBuffer, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+  vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vkPipeline);
+
+
+  let viewport = new VkViewport();
+  viewport.x = 0;
+  viewport.y = 0;
+  viewport.width = frambuffer.width;
+  viewport.height = frambuffer.height;
+  viewport.minDepth = 0;
+  viewport.maxDepth = 1;
+
+  let scissor = new VkRect2D();
+  scissor.offset.x = 0;
+  scissor.offset.y = 0;
+  scissor.extent.width = frambuffer.width;
+  scissor.extent.height = frambuffer.height;
+
+  vkCmdSetViewport(cmdBuffer, 0, 1, [viewport]);
+
+  vkCmdSetScissor(cmdBuffer, 0, 1, [scissor]);
+
+
+  let offsets = new BigUint64Array([0n, 0n]);
+  let bindings = pipeline.vertexBindings;
+  let vertexBuffers = [];
+  let id = 0;
+  let length = 0;
+
+  for (let i = 0; i < bindings.length; i++) {
+    let handle = bindings[i].buffer;
+    if (handle !== null && handle.id !== -1 && handle.location !== -1) {
+      vertexBuffers[id] = handle.vksLocal.vkBuffer;
+      length = handle.length;
+      id += 1;
+    }
+  }
+
+  vkCmdBindVertexBuffers(cmdBuffer, 0, vertexBuffers.length, vertexBuffers, offsets);
+  vkCmdBindIndexBuffer(cmdBuffer, indexBuffer.vksLocal.vkBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+  vkCmdDrawIndexed(cmdBuffer, 6, 1, 0, 0, 0);
+  //vkCmdDraw(cmdBuffer, length, 1, 0, 0);
+
+  vkCmdEndRenderPass(cmdBuffer);
+
+  result = vkEndCommandBuffer(cmdBuffer);
+  this.assertVulkan(result);
+
+  let submitInfo = new VkSubmitInfo();
+  submitInfo.waitSemaphoreCount = 1;
+  submitInfo.pWaitSemaphores = [this.semaphores.imageAviable];
+  submitInfo.pWaitDstStageMask = new Int32Array([VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT]);
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers = [cmdBuffer];
+  submitInfo.signalSemaphoreCount = 1;
+  submitInfo.pSignalSemaphores = [this.semaphores.renderingDone];
+
+  vkQueueSubmit(this.queue, 1, [submitInfo], null);
 
 }
 //export function pipelineSetViewport(pipeline,viewport);
