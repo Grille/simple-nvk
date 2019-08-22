@@ -95,7 +95,7 @@ export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null)
 }
 export function bufferReadData(handle, offset = 0, length = null) {
   let dataPtr = { $: 0n };
-  if (length === null) length = handle.length;
+  if (length === null) length = handle.size;
 
   this.copyVkBuffer(handle.vksLocal.vkBuffer, handle.vksHost.vkBuffer, offset, length);
 

@@ -27,9 +27,7 @@ export function main() {
   //snvk.bindShader(vertShader);
 
   let storageBufferCreateInfo = {
-    type: snvk.TYPE_FLOAT32,
-    size: 4,
-    length: width * height,
+    size: width * height * 4 * 4,
     usage: snvk.BUFFER_USAGE_STORAGE,
     readable: true,
   }

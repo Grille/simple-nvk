@@ -54,7 +54,7 @@ export function getVkBindingDescriptors(handles, type, flags) {
     let bufferInfo = new VkDescriptorBufferInfo();
     bufferInfo.buffer = buffer.vksLocal.vkBuffer;
     bufferInfo.offset = 0n;
-    bufferInfo.range = buffer.length * buffer.stride;
+    bufferInfo.range = buffer.size;
 
     let writeDescriptorSet = new VkWriteDescriptorSet();
     writeDescriptorSet.dstSet = descriptorSet;
