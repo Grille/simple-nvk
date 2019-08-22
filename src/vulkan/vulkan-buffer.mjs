@@ -6,20 +6,17 @@ export let bufferHandles = [];
 export let indexBufferHandle = null;
 
 export function createBuffer(createInfo) {
-  let { size, type, length, usage, readable = false} = createInfo;
+  let { size, usage, readable = false} = createInfo;
 
   let vkUsageBits = this.getVkBufferUsageBits(usage, readable);
 
-  let stride = (type >> 4) * size;
-  let bufferSize = stride * length;
-
   let hostBuffer = this.createVkBuffer(
-    bufferSize,
+    size,
     vkUsageBits.host,
     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
   );
   let localBuffer = this.createVkBuffer(
-    bufferSize,
+    size,
     vkUsageBits.local,
     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
   );
@@ -29,9 +26,7 @@ export function createBuffer(createInfo) {
     vksHost: hostBuffer,
     vksLocal: localBuffer,
     usage: usage,
-    length: length,
     size: size,
-    stride: stride,
     readable: readable,
   }
 
@@ -74,16 +69,15 @@ export function createVkBuffer(bufferSize,bufferUsageFlags,memoryPropertieFlags)
 }
 export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null) {
   let dataPtr = { $: 0n };
-  let { stride } = handle;
-  if (length === null) length = (data.length / handle.size) | 0;
-  let result = vkMapMemory(this.device, handle.vksHost.vkMemory, offsetDst * stride, length * stride, 0, dataPtr);
+  if (length === null) length = data.buffer.length;
+  let result = vkMapMemory(this.device, handle.vksHost.vkMemory, offsetDst, length, 0, dataPtr);
   this.assertVulkan(result);
 
-  let buffer = ArrayBuffer.fromAddress(dataPtr.$, length * stride);
+  let buffer = ArrayBuffer.fromAddress(dataPtr.$, length);
   let srcView = new Uint8Array(data.buffer);
   let dstView = new Uint8Array(buffer);
-  for (let i = 0; i < length * stride; ++i) {
-    dstView[i + offsetDst * stride] = srcView[i + offsetSrc * stride];
+  for (let i = 0; i < length; ++i) {
+    dstView[i + offsetDst] = srcView[i + offsetSrc];
   };
 
   //let test = new Float64Array(dstView.buffer);
@@ -97,19 +91,18 @@ export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null)
   
   vkUnmapMemory(this.device, handle.vksHost.vkMemory);
 
-  this.copyVkBuffer(handle.vksHost.vkBuffer, handle.vksLocal.vkBuffer, offsetDst * stride, length * stride);
+  this.copyVkBuffer(handle.vksHost.vkBuffer, handle.vksLocal.vkBuffer, offsetDst, length);
 }
 export function bufferReadData(handle, offset = 0, length = null) {
   let dataPtr = { $: 0n };
-  let { stride } = handle;
   if (length === null) length = handle.length;
 
-  this.copyVkBuffer(handle.vksLocal.vkBuffer, handle.vksHost.vkBuffer, offset * stride, length * stride);
+  this.copyVkBuffer(handle.vksLocal.vkBuffer, handle.vksHost.vkBuffer, offset, length);
 
-  let result = vkMapMemory(this.device, handle.vksHost.vkMemory, offset * stride, length * stride, 0, dataPtr);
+  let result = vkMapMemory(this.device, handle.vksHost.vkMemory, offset, length, 0, dataPtr);
   this.assertVulkan(result);
 
-  let buffer = ArrayBuffer.fromAddress(dataPtr.$, length * stride);
+  let buffer = ArrayBuffer.fromAddress(dataPtr.$, length);
 
   return buffer;
 }
@@ -168,20 +161,20 @@ export function destroyBuffer(handle) {
   vkDestroyBuffer(this.device, handle.vksLocal.vkBuffer, null);
   deleteHandle(this.bufferHandles, handle);
 }
-export function getAttribute(buffer, location, type, size) {
+export function getAttribute(binding, location, type, size, offset = 0) {
   let format = this.findVkFormat(type >> 4, size, type & 15);
-  let stride = (type >> 4) * size;
   return {
-    buffer,
+    binding,
     location,
     format,
-    stride,
+    offset,
   }
 }
-export function getBinding(buffer, binding) {
+export function getBinding(buffer, binding = 0, stride = 1) {
   return {
     buffer,
     binding,
+    stride,
   }
 }
 export function findVkFormat(size, vec, type) {

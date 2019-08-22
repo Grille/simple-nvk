@@ -81,42 +81,34 @@ function createInput() {
 
 
   let indexBufferCreateInfo = {
-    type: snvk.TYPE_UINT32,
-    size: 3,
-    length: 2,
+    size: 2 * 4 * 3,
     usage: snvk.BUFFER_USAGE_INDEX,
   }
   let posBufferCreateInfo = {
-    type: snvk.TYPE_FLOAT32,
-    size: 2,
-    length: 6,
+    size: 6 * 4 * 2,
     usage: snvk.BUFFER_USAGE_VERTEX,
   }
   let colorBufferCreateInfo = {
-    type: snvk.TYPE_FLOAT32,
-    size: 3,
-    length: 6,
+    size: 6 * 4 * 3,
     usage: snvk.BUFFER_USAGE_VERTEX,
   }
 
   let indexBuffer = snvk.createBuffer(indexBufferCreateInfo);
-  let indexBinding = snvk.getBinding(indexBuffer);
-  snvk.bufferSubData(indexBuffer, 0, indexData, 0, 2);
-  //snvk.bindBuffer(indexBuffer);
+  snvk.bufferSubData(indexBuffer, 0, indexData, 0, 2 * 4 * 3);
 
   let posBuffer = snvk.createBuffer(posBufferCreateInfo);
-  let posAttrib = snvk.getAttribute(posBuffer, 0, snvk.TYPE_FLOAT32, 2);
-  snvk.bufferSubData(posBuffer, 0, posData, 0, 6);
-  //snvk.bindBuffer(posBuffer, 0);
+  let posBinding = snvk.getBinding(posBuffer, 0, 4 * 2);
+  let posAttrib = snvk.getAttribute(posBinding, 0, snvk.TYPE_FLOAT32, 2);
+  snvk.bufferSubData(posBuffer, 0, posData, 0, 6 * 4 * 2);
 
   let colorBuffer = snvk.createBuffer(colorBufferCreateInfo);
-  let colorAttrib = snvk.getAttribute(colorBuffer, 1, snvk.TYPE_FLOAT32, 3);
-  snvk.bufferSubData(colorBuffer, 0, colorData, 0, 6);
-  //snvk.bindBuffer(colorBuffer, 1);
+  let colorBinding = snvk.getBinding(colorBuffer, 1, 4 * 3);
+  let colorAttrib = snvk.getAttribute(colorBinding, 1, snvk.TYPE_FLOAT32, 3);
+  snvk.bufferSubData(colorBuffer, 0, colorData, 0, 6 * 4 * 3);
 
   buffers = [indexBuffer, posBuffer, colorBuffer];
   shaders = [vertShader, fragShader];
-  bindings = [indexBinding];
+  bindings = [posBinding, colorBinding];
   attributes = [posAttrib, colorAttrib];
 
 }
@@ -178,8 +170,7 @@ function destroyPipline(){
 }
 
 function drawFrame(){
-  let framebuffer = snvk.getNextSwapchainFramebuffer(swapchain);
-  console.log(framebuffer.id);
+  //let framebuffer = snvk.getNextSwapchainFramebuffer(swapchain);
   snvk.drawFrame(swapchain);
 }
 

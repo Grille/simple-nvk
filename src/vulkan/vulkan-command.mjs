@@ -81,7 +81,7 @@ export function createCommand(createInfo) {
     vkCmdBindVertexBuffers(cmdBuffer, 0, vertexBuffers.length, vertexBuffers, offsets);
     vkCmdBindIndexBuffer(cmdBuffer, indexBuffer.vksLocal.vkBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-    vkCmdDrawIndexed(cmdBuffer, indexBuffer.length * indexBuffer.size, 1, 0, 0, 0);
+    vkCmdDrawIndexed(cmdBuffer, 6, 1, 0, 0, 0);
     //vkCmdDraw(cmdBuffer, length, 1, 0, 0);
 
     vkCmdEndRenderPass(cmdBuffer);

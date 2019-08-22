@@ -71,8 +71,17 @@ export function destroyRenderPass(handle){
 export function createRenderPipeline(createInfo) {
   let result;
   let { renderPass,shaders, bindings, attributes, viewport = null } = createInfo;
+
+  let vertexBindings = [];
+  for (let i = 0; i < bindings.length; i++) {
+    let binding = bindings[i];
+    if (binding.buffer.usage === this.BUFFER_USAGE_VERTEX) {
+      vertexBindings[vertexBindings.length] = binding;
+    }
+  }
+
   let shaderInputInfo = this.createShaderInput(shaders);
-  let bufferInputInfo = this.createBufferInput(attributes);
+  let bufferInputInfo = this.createBufferInput(vertexBindings,attributes);
 
   let pipelineLayoutInfo = new VkPipelineLayoutCreateInfo();
   pipelineLayoutInfo.setLayoutCount = 0;

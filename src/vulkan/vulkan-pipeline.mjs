@@ -102,35 +102,39 @@ export function createShaderInput(handles) {
   }
   return shaderStages;
 }
-export function createBufferInput(attributes) {
+export function createBufferInput(bindings,attributes) {
   let vertexBindings = [], vertexAttributes = [];
   let id = 0;
   
-  for (let i = 0; i < attributes.length; i++) {
-    let attribute = attributes[i];
-    //if (handle !== null && handle.id !== -1 && handle.location !== -1) {
+  for (let i = 0; i < bindings.length; i++) {
+    let binding = bindings[i];
 
     let vertexBinding = new VkVertexInputBindingDescription();
-    vertexBinding.binding = attribute.location;
-    vertexBinding.stride = attribute.stride;
+    vertexBinding.binding = binding.binding;
+    vertexBinding.stride = binding.stride;
     vertexBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    vertexBindings[i] = vertexBinding;
+  }
+
+  for (let i = 0; i < attributes.length; i++) {
+    let attribute = attributes[i];
 
     let vertexAttribute = new VkVertexInputAttributeDescription();
     vertexAttribute.location = attribute.location;
-    vertexAttribute.binding = attribute.location;
+    vertexAttribute.binding = attribute.binding.binding;
     vertexAttribute.format = attribute.format;
     vertexAttribute.offset = 0;
 
-    vertexBindings[id] = vertexBinding;
-    vertexAttributes[id] = vertexAttribute;
-    id += 1;
-    //}
+    vertexAttributes[i] = vertexAttribute;
   }
 
   let vertex = new VkPipelineVertexInputStateCreateInfo({});
   if (vertexBindings.length > 0) {
     vertex.vertexBindingDescriptionCount = vertexBindings.length;
     vertex.pVertexBindingDescriptions = vertexBindings;
+  }
+  if (vertexAttributes.length > 0) {
     vertex.vertexAttributeDescriptionCount = vertexAttributes.length;
     vertex.pVertexAttributeDescriptions = vertexAttributes;
   }
