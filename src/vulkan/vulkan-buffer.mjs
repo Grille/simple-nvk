@@ -98,47 +98,30 @@ export function copyBuffer(srcHandle, dstHandle, offset, size) {
   this.copyVkBuffer(srcHandle.vksLocal.vkBuffer, dstHandle.vksLocal.vkBuffer, offset, size);
 }
 export function copyVkBuffer(src, dst, offset, size) {
-  let commandBufferAllocateInfo = new VkCommandBufferAllocateInfo();
-  commandBufferAllocateInfo.commandPool = this.commandPool;
-  commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-  commandBufferAllocateInfo.commandBufferCount = 1;
 
-  let commandBuffer = new VkCommandBuffer();
-  let result = vkAllocateCommandBuffers(this.device, commandBufferAllocateInfo, [commandBuffer]);
-  this.assertVulkan(result);
-
-  let commandBufferBeginInfo = new VkCommandBufferBeginInfo();
-  commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-  commandBufferBeginInfo.pInheritanceInfo = null;
-
-  result = vkBeginCommandBuffer(commandBuffer, commandBufferBeginInfo);
-  this.assertVulkan(result);
+  let commandCreateInfo = {
+    level: this.COMMAND_LEVEL_PRIMARY,
+    usage: this.COMMAND_USAGE_ONE_TIME,
+  }
+  let commandBuffer = this.createCommandBuffer(commandCreateInfo);
+  this.cmdBegin(commandBuffer);
+  let { vkCommandBuffer } = commandBuffer;
 
   let bufferCopy = new VkBufferCopy();
   bufferCopy.srcOffset = offset;
   bufferCopy.dstOffset = offset;
   bufferCopy.size = size;
+  vkCmdCopyBuffer(vkCommandBuffer, src, dst, 1, [bufferCopy]);
 
-  vkCmdCopyBuffer(commandBuffer, src, dst, 1, [bufferCopy]);
+  this.cmdEnd(commandBuffer);
 
-  result = vkEndCommandBuffer(commandBuffer);
-  this.assertVulkan(result);
+  let submitInfo = {
+    commandBuffer: commandBuffer,
+    blocking: true,
+  }
+  this.submit(submitInfo);
 
-  let submitInfo = new VkSubmitInfo();
-  submitInfo.waitSemaphoreCount = 0;
-  submitInfo.pWaitSemaphores = null;
-  submitInfo.pWaitDstStageMask = null;
-  submitInfo.commandBufferCount = 1;
-  submitInfo.pCommandBuffers = [commandBuffer];
-  submitInfo.signalSemaphoreCount = 0;
-  submitInfo.pSignalSemaphores = null;
-
-  result = vkQueueSubmit(this.queue, 1, [submitInfo], null);
-  this.assertVulkan(result);
-
-  vkQueueWaitIdle(this.queue);
-
-  vkFreeCommandBuffers(this.device, this.commandPool, 1, [commandBuffer]);
+  this.destroyCommandBuffer(commandBuffer);
 }
 export function destroyBuffer(handle) {
   if (handle.id === -1) return;

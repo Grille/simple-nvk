@@ -168,13 +168,14 @@ export function submit(submitInfo) {
   if (blocking) {
     let fenceInfo = new VkFenceCreateInfo();
     let fence = new VkFence();
+
     let result = vkCreateFence(this.device, fenceInfo, null, fence);
     this.assertVulkan(result);
   
-    result = vkQueueSubmit(this.queue, 1, [submitInfo], fence);
+    result = vkQueueSubmit(this.queue, 1, [vkSubmitInfo], fence);
     this.assertVulkan(result);
   
-    result = vkWaitForFences(this.device, 1, [fence], VK_TRUE, 60 * 1e9);
+    result = vkWaitForFences(this.device, 1, [fence], true, 60 * 1E9);
     this.assertVulkan(result);
   
     vkDestroyFence(this.device, fence, null);

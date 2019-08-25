@@ -42,7 +42,7 @@ export function main() {
 
   let commandCreateInfo = {
     level: snvk.COMMAND_LEVEL_PRIMARY,
-    usage: snvk.COMMAND_USAGE_SIMULTANEOUS,
+    usage: snvk.COMMAND_USAGE_ONE_TIME,
   }
   let command = snvk.createCommandBuffer(commandCreateInfo);
 
@@ -56,7 +56,7 @@ export function main() {
   time("  vk execute...")
   let submitInfo = {
     commandBuffer: command,
-    bloking: true,
+    blocking: true,
   }
   snvk.submit(submitInfo);
 
