@@ -72,10 +72,16 @@ export function destroyRenderPass(handle){
 export function createRenderPipeline(createInfo) {
   let result;
   let {
-    renderPass, shaders, bindings, attributes, backgroundColor = [0, 0, 0, 1], rasterizationInfo = {}, blendingInfo = {}, viewport = null, basePipeline = null 
+    renderPass, shaders, bindings, attributes, 
+    backgroundColor = [0, 0, 0, 1], 
+    rasterizationInfo = {}, blendingInfo = {}, assemblyInfo = {},
+    viewport = null, basePipeline = null 
   } = createInfo;
   let {
-    polygonMode = VK_POLYGON_MODE_FILL, cullMode = VK_CULL_MODE_BACK_BIT, frontFace = VK_FRONT_FACE_CLOCKWISE, lineWidth = 1 
+    primitiveRestartEnabled = false, topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+  } = assemblyInfo;
+  let {
+    polygonMode = VK_POLYGON_MODE_FILL, cullMode = VK_CULL_MODE_BACK_BIT, frontFace = VK_FRONT_FACE_CLOCKWISE, lineWidth = 1
   } = rasterizationInfo;
   let {
     srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA, dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, colorBlendOp = VK_BLEND_OP_ADD, 
@@ -100,6 +106,10 @@ export function createRenderPipeline(createInfo) {
   let pipelineLayout = new VkPipelineLayout();
   result = vkCreatePipelineLayout(this.device, pipelineLayoutInfo, null, pipelineLayout);
   this.assertVulkan(result);
+
+  let assemblyCreateInfo = new VkPipelineInputAssemblyStateCreateInfo();
+  assemblyCreateInfo.topology = topology;
+  assemblyCreateInfo.primitiveRestartEnabled = primitiveRestartEnabled;
 
   let rasterizationCreateInfo = new VkPipelineRasterizationStateCreateInfo();
   rasterizationCreateInfo.depthClampEnable = false;
@@ -144,8 +154,8 @@ export function createRenderPipeline(createInfo) {
   let graphicsPipelineCreateInfo = new VkGraphicsPipelineCreateInfo();
   graphicsPipelineCreateInfo.stageCount = shaderInputInfo.length;
   graphicsPipelineCreateInfo.pStages = shaderInputInfo;
-  graphicsPipelineCreateInfo.pVertexInputState = bufferInputInfo.vertex;
-  graphicsPipelineCreateInfo.pInputAssemblyState = bufferInputInfo.assembly;
+  graphicsPipelineCreateInfo.pVertexInputState = bufferInputInfo;
+  graphicsPipelineCreateInfo.pInputAssemblyState = assemblyCreateInfo;
   graphicsPipelineCreateInfo.pTessellationState = null;
   graphicsPipelineCreateInfo.pViewportState = viewport;
   graphicsPipelineCreateInfo.pRasterizationState = rasterizationCreateInfo;

@@ -139,11 +139,7 @@ export function createBufferInput(bindings,attributes) {
     vertex.pVertexAttributeDescriptions = vertexAttributes;
   }
 
-  let assembly = new VkPipelineInputAssemblyStateCreateInfo();
-  assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-  assembly.primitiveRestartEnabled = false;
-
-  return { vertex, assembly }
+  return vertex;
 }
 
 export function createViewport() {
