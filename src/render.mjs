@@ -14,6 +14,9 @@ let shaders = null;
 let bindings = null;
 let attributes = null;
 
+let frameAvailable = null;
+let renderAvailable = null;
+
 let surface = null;
 let renderPass = null;
 let renderPipeline = null;
@@ -140,16 +143,19 @@ function createPipeline() {
   }
   swapchain = snvk.createSwapchain(swapchainCreateInfo);
 
+  frameAvailable = snvk.createSemaphore();
+  renderAvailable = snvk.createSemaphore();
+
   commandbuffers = [];
   for (let i = 0; i < swapchain.framebuffers.length; i++) {
     let framebuffer = swapchain.framebuffers[i];
-    let command = snvk.createCommandbuffer();
+    let command = snvk.createCommandBuffer();
 
     snvk.cmdBegin(command);
 
     snvk.cmdBeginRender(command, renderPipeline, framebuffer);
     snvk.cmdBindIndexBuffer(command, buffers[0]);
-    snvk.cmdDrawIndexed(command);
+    snvk.cmdDrawIndexed(command, 0, 6);
 
     snvk.cmdEndRender(command);
 
@@ -173,9 +179,15 @@ function destroyPipline(){
 }
 
 function drawFrame() {
-  let index = snvk.getNextSwapchainIndex(swapchain);
-  snvk.submit(commandbuffers[index]);
-  snvk.present(swapchain);
+  let index = snvk.getNextSwapchainIndex(swapchain, frameAvailable);
+  let command = commandbuffers[index];
+  let submitInfo = {
+    waitSemaphore: frameAvailable,
+    signalSemaphore: renderAvailable,
+    commandBuffer: command,
+  }
+  snvk.submit(submitInfo);
+  snvk.present(swapchain, renderAvailable);
 }
 
 function eventLoop() {
@@ -185,8 +197,9 @@ function eventLoop() {
   else {
     window.pollEvents();
     if (ready) {
-      if ((Date.now() - frameDate) > 2000) {
+      if ((Date.now() - frameDate) > 1000) {
         frameDate = Date.now();
+        fpsCount++;
         drawFrame();
       }
     }
@@ -199,7 +212,6 @@ function eventLoop() {
       fpsDate = Date.now();
       fpsCount = 0;
     }
-    fpsCount++;
     setTimeout(eventLoop, 0);
   }
 }

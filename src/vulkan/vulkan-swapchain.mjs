@@ -66,20 +66,20 @@ export function createSwapchain(createInfo) {
 }
 
 
-export function getNextSwapchainIndex(swapchain) {
+export function getNextSwapchainIndex(swapchain, semaphore) {
   let imageIndex = { $: 0 };
-  vkAcquireNextImageKHR(this.device, swapchain.vkSwapchain, 1E5, this.semaphores.imageAviable, null, imageIndex);
+  vkAcquireNextImageKHR(this.device, swapchain.vkSwapchain, 1E5, semaphore.vkSemaphore, null, imageIndex);
   return swapchain.imageIndex = imageIndex.$;
 }
 
-export function getNextSwapchainFramebuffer(swapchain) {
-  return swapchain.framebuffers[this.getNextSwapchainIndex(swapchain)];
+export function getNextSwapchainFramebuffer(swapchain, semaphore) {
+  return swapchain.framebuffers[this.getNextSwapchainIndex(swapchain, semaphore)];
 }
 
-export function present(swapchain) {
+export function present(swapchain, semaphore) {
   let presentInfoKHR = new VkPresentInfoKHR();
   presentInfoKHR.waitSemaphoreCount = 1;
-  presentInfoKHR.pWaitSemaphores = [this.semaphores.renderingDone];
+  presentInfoKHR.pWaitSemaphores = [semaphore.vkSemaphore];
   presentInfoKHR.swapchainCount = 1;
   presentInfoKHR.pSwapchains = [swapchain.vkSwapchain];
   presentInfoKHR.pImageIndices = new Uint32Array([swapchain.imageIndex]);

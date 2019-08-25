@@ -41,8 +41,22 @@ export function main() {
   }
   let computePipeline = snvk.createComputePipeline(computePipelineCreateInfo);
 
+  let command = snvk.createCommandBuffer();
+
+  snvk.cmdBegin(command);
+
+  snvk.cmdBindComputePipeline(command, computePipeline);
+  snvk.cmdDispatch(command, width / workGroupSize, height / workGroupSize);
+
+  snvk.cmdEnd(command);
+
   time("  vk execute...")
-  snvk.compute(computePipeline, width / workGroupSize, height / workGroupSize);
+  let submitInfo = {
+    commandBuffer: command,
+    bloking: true,
+  }
+  snvk.submit(submitInfo);
+  //snvk.compute(computePipeline, width / workGroupSize, height / workGroupSize);
 
   time("  vk readback...")
   let view = new Float32Array(snvk.bufferReadData(storageBuffer));

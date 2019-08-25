@@ -36,12 +36,13 @@ export function waitIdle(){
 export function shutdownVulkan() {
   vkDeviceWaitIdle(this.device);
 
+  destroyHandles(this.semaphoreHandles, (a) => this.destroySemaphore(a));
   destroyHandles(this.framebufferHandles, (a) => this.destroyFramebuffer(a));
   destroyHandles(this.imageViewHandles, (a) => this.destroyImageView(a));
   destroyHandles(this.swapchainHandles, (a) => this.destroySwapchain(a));
   destroyHandles(this.surfaceHandles, (a) => this.destroySurface(a));
   destroyHandles(this.renderPassHandles, (a) => this.destroyRenderPass(a));
-  destroyHandles(this.commandbufferHandles, (a) => this.destroyCommandbuffer(a));
+  destroyHandles(this.commandBufferHandles, (a) => this.destroyCommandBuffer(a));
 
   destroyHandles(this.renderPipelineHandles, (a) => this.destroyRenderPipeline(a));
   destroyHandles(this.computePipelineHandles, (a) => this.destroyComputePipeline(a));

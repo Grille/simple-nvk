@@ -1,45 +1,45 @@
 import nvk from "nvk"
 import { pushHandle, deleteHandle, InitializedArray } from "./utils.mjs"
 
-export let commandbufferHandles = [];
+export let commandBufferHandles = [];
 
-export function createCommandbuffer() {
+export function createCommandBuffer() {
   let commandBufferAllocateInfo = new VkCommandBufferAllocateInfo();
   commandBufferAllocateInfo.commandPool = this.commandPool;
   commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
   commandBufferAllocateInfo.commandBufferCount = 1;
 
-  let commandbuffer = new VkCommandBuffer();
-  let result = vkAllocateCommandBuffers(this.device, commandBufferAllocateInfo, [commandbuffer]);
+  let commandBuffer = new VkCommandBuffer();
+  let result = vkAllocateCommandBuffers(this.device, commandBufferAllocateInfo, [commandBuffer]);
   this.assertVulkan(result);
 
   let handle = {
-    vkCommandbuffer: commandbuffer,
+    vkCommandBuffer: commandBuffer,
   }
 
-  pushHandle(this.commandbufferHandles, handle);
+  pushHandle(this.commandBufferHandles, handle);
 
   return handle;
 }
 
-export function destroyCommandbuffer(handle) {
-  vkFreeCommandBuffers(this.device, this.commandPool, 1, [handle.vkCommandbuffer]);
-  deleteHandle(this.commandbufferHandles, handle);
+export function destroyCommandBuffer(handle) {
+  vkFreeCommandBuffers(this.device, this.commandPool, 1, [handle.vkCommandBuffer]);
+  deleteHandle(this.commandBufferHandles, handle);
 }
 
-export function cmdBegin(commandbuffer) {
-  let { vkCommandbuffer } = commandbuffer;
+export function cmdBegin(commandBuffer) {
+  let { vkCommandBuffer } = commandBuffer;
 
   let commandBufferBeginInfo = new VkCommandBufferBeginInfo();
   commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
   commandBufferBeginInfo.pInheritanceInfo = null;
 
-  let result = vkBeginCommandBuffer(vkCommandbuffer, commandBufferBeginInfo);
+  let result = vkBeginCommandBuffer(vkCommandBuffer, commandBufferBeginInfo);
   this.assertVulkan(result);
 }
 
-export function cmdBeginRender(commandbuffer, pipeline, frambuffer) {
-  let { vkCommandbuffer } = commandbuffer;
+export function cmdBeginRender(commandBuffer, pipeline, frambuffer) {
+  let { vkCommandBuffer } = commandBuffer;
 
   let renderPassBeginInfo = new VkRenderPassBeginInfo();
   renderPassBeginInfo.renderPass = pipeline.vkRenderPass;
@@ -56,26 +56,19 @@ export function cmdBeginRender(commandbuffer, pipeline, frambuffer) {
     depthStencil: null,
   })];
 
-  vkCmdBeginRenderPass(vkCommandbuffer, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+  vkCmdBeginRenderPass(vkCommandBuffer, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-  vkCmdBindPipeline(vkCommandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vkPipeline);
+  vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vkPipeline);
 
   let vertexBindings = pipeline.vertexBindings;
   let offsets = new BigUint64Array(vertexBindings.length);
   let vertexBuffers = [];
-  let id = 0;
-  let length = 0;
 
   for (let i = 0; i < vertexBindings.length; i++) {
-    let handle = vertexBindings[i].buffer;
-    if (handle !== null && handle.id !== -1 && handle.location !== -1) {
-      vertexBuffers[id] = handle.vksLocal.vkBuffer;
-      length = handle.length;
-      id += 1;
-    }
+    vertexBuffers[i] = vertexBindings[i].buffer.vksLocal.vkBuffer;
   }
 
-  vkCmdBindVertexBuffers(vkCommandbuffer, 0, vertexBuffers.length, vertexBuffers, offsets);
+  vkCmdBindVertexBuffers(vkCommandBuffer, 0, vertexBuffers.length, vertexBuffers, offsets);
 }
 
 /*
@@ -98,39 +91,98 @@ export function cmdBeginRender(commandbuffer, pipeline, frambuffer) {
   vkCmdSetScissor(cmdBuffer, 0, 1, [scissor]);
 */
 
-export function cmdBindIndexBuffer(commandbuffer, indexBuffer) {
-  let { vkCommandbuffer } = commandbuffer;
+export function cmdBindIndexBuffer(commandBuffer, indexBuffer) {
+  let { vkCommandBuffer } = commandBuffer;
 
-  vkCmdBindIndexBuffer(vkCommandbuffer, indexBuffer.vksLocal.vkBuffer, 0, VK_INDEX_TYPE_UINT32);
+  vkCmdBindIndexBuffer(vkCommandBuffer, indexBuffer.vksLocal.vkBuffer, 0, VK_INDEX_TYPE_UINT32);
 }
-export function cmdDrawIndexed(commandbuffer) {
-  let { vkCommandbuffer } = commandbuffer;
+export function cmdDrawIndexed(commandBuffer,offset,length) {
+  let { vkCommandBuffer } = commandBuffer;
 
-  vkCmdDrawIndexed(vkCommandbuffer, 6, 1, 0, 0, 0);
+  vkCmdDrawIndexed(vkCommandBuffer, length, 1, offset, 0, 0);
 }
 
-export function cmdEndRender(commandbuffer) {
-  let { vkCommandbuffer } = commandbuffer;
+export function cmdEndRender(commandBuffer) {
+  let { vkCommandBuffer } = commandBuffer;
 
-  vkCmdEndRenderPass(vkCommandbuffer);
+  vkCmdEndRenderPass(vkCommandBuffer);
 }
-export function cmdEnd(commandbuffer) {
-  let { vkCommandbuffer } = commandbuffer;
+export function cmdEnd(commandBuffer) {
+  let { vkCommandBuffer } = commandBuffer;
 
-  let result = vkEndCommandBuffer(vkCommandbuffer);
+  let result = vkEndCommandBuffer(vkCommandBuffer);
   this.assertVulkan(result);
 }
-export function submit(commandbuffer) {
-  let { vkCommandbuffer } = commandbuffer;
+
+export function submitFence(commandBuffer) {
+  let { vkCommandBuffer } = commandBuffer;
 
   let submitInfo = new VkSubmitInfo();
-  submitInfo.waitSemaphoreCount = 1;
-  submitInfo.pWaitSemaphores = [this.semaphores.imageAviable];
-  submitInfo.pWaitDstStageMask = new Int32Array([VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT]);
   submitInfo.commandBufferCount = 1;
-  submitInfo.pCommandBuffers = [vkCommandbuffer];
-  submitInfo.signalSemaphoreCount = 1;
-  submitInfo.pSignalSemaphores = [this.semaphores.renderingDone];
+  submitInfo.pCommandBuffers = [vkCommandBuffer];
 
-  vkQueueSubmit(this.queue, 1, [submitInfo], null);
+  let fenceInfo = new VkFenceCreateInfo();
+
+  let fence = new VkFence();
+  let result = vkCreateFence(this.device, fenceInfo, null, fence);
+  this.assertVulkan(result);
+
+  result = vkQueueSubmit(this.queue, 1, [submitInfo], fence);
+  this.assertVulkan(result);
+
+  result = vkWaitForFences(this.device, 1, [fence], VK_TRUE, 60 * 1e9);
+  this.assertVulkan(result);
+
+  vkDestroyFence(this.device, fence, null);
+
+}
+
+export function cmdBindComputePipeline(commandBuffer, pipeline) {
+  let { vkCommandBuffer } = commandBuffer;
+
+  vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.vkPipeline);
+  vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.vkLayout, 0, 1, [pipeline.vksStorageDescriptors.vkSet], 0, null);
+}
+
+export function cmdDispatch(commandBuffer, x = 1, y = 1, z = 1) {
+  let { vkCommandBuffer } = commandBuffer;
+
+  vkCmdDispatch(vkCommandBuffer, x | 0, y | 0, z | 0);
+}
+
+export function submit(submitInfo) {
+  let { commandBuffer, waitSemaphore = null, signalSemaphore = null, blocking = false } = submitInfo;
+
+  let vkSubmitInfo = new VkSubmitInfo();
+  vkSubmitInfo.pWaitDstStageMask = new Int32Array([VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT]);
+  vkSubmitInfo.commandBufferCount = 1;
+  vkSubmitInfo.pCommandBuffers = [commandBuffer.vkCommandBuffer];
+  if (waitSemaphore !== null) {
+    vkSubmitInfo.waitSemaphoreCount = 1;
+    vkSubmitInfo.pWaitSemaphores = [waitSemaphore.vkSemaphore];
+  }
+  if (signalSemaphore !== null) {
+    vkSubmitInfo.signalSemaphoreCount = 1;
+    vkSubmitInfo.pSignalSemaphores = [signalSemaphore.vkSemaphore];
+  }
+
+  if (blocking) {
+    let fenceInfo = new VkFenceCreateInfo();
+    let fence = new VkFence();
+    let result = vkCreateFence(this.device, fenceInfo, null, fence);
+    this.assertVulkan(result);
+  
+    result = vkQueueSubmit(this.queue, 1, [submitInfo], fence);
+    this.assertVulkan(result);
+  
+    result = vkWaitForFences(this.device, 1, [fence], VK_TRUE, 60 * 1e9);
+    this.assertVulkan(result);
+  
+    vkDestroyFence(this.device, fence, null);
+  }
+  else {
+    let result = vkQueueSubmit(this.queue, 1, [vkSubmitInfo], null);
+    this.assertVulkan(result);
+  }
+
 }
