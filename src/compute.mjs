@@ -24,7 +24,6 @@ export function main() {
     stage: snvk.SHADER_STAGE_COMPUTE,
   }
   let compShader = snvk.createShader(compCreateInfo);
-  //snvk.bindShader(vertShader);
 
   let storageBufferCreateInfo = {
     size: width * height * 4 * 4,
@@ -60,7 +59,6 @@ export function main() {
     bloking: true,
   }
   snvk.submit(submitInfo);
-  //snvk.compute(computePipeline, width / workGroupSize, height / workGroupSize);
 
   time("  vk readback...")
   let view = new Float32Array(snvk.bufferReadData(storageBuffer));

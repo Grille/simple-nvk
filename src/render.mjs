@@ -72,8 +72,6 @@ function createInput() {
   let vertSrc = snvk.loadShaderSrc(`./src/shader/shader.vert`);
   let fragSrc = snvk.loadShaderSrc(`./src/shader/shader.frag`);
 
-  //snvk.bindShader(compShader);
-
   let vertCreateInfo = {
     source: vertSrc,
     format: snvk.SHADER_SRC_GLSL,
@@ -87,7 +85,6 @@ function createInput() {
 
   let vertShader = snvk.createShader(vertCreateInfo);
   let fragShader = snvk.createShader(fragCreateInfo);
-
 
   let indexBufferCreateInfo = {
     size: 2 * 4 * 3,
@@ -172,7 +169,7 @@ function createPipeline() {
   ready = true;
 }
 
-function destroyPipline(){
+function destroyPipline() {
   ready = false;
 
   snvk.waitIdle();
@@ -181,7 +178,6 @@ function destroyPipline(){
   snvk.destroySurface(surface);
   snvk.destroyRenderPipeline(renderPipeline);
   snvk.destroyRenderPass(renderPass);
-  
 }
 
 function drawFrame() {
@@ -203,7 +199,7 @@ function eventLoop() {
   else {
     window.pollEvents();
     if (ready) {
-      if ((Date.now() - frameDate) > 1000) {
+      if ((Date.now() - frameDate) > 10) {
         frameDate = Date.now();
         fpsCount++;
         drawFrame();
