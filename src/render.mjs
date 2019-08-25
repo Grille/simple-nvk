@@ -149,7 +149,12 @@ function createPipeline() {
   commandbuffers = [];
   for (let i = 0; i < swapchain.framebuffers.length; i++) {
     let framebuffer = swapchain.framebuffers[i];
-    let command = snvk.createCommandBuffer();
+
+    let commandCreateInfo = {
+      level: snvk.COMMAND_LEVEL_PRIMARY,
+      usage: snvk.COMMAND_USAGE_SIMULTANEOUS,
+    }
+    let command = snvk.createCommandBuffer(commandCreateInfo);
 
     snvk.cmdBegin(command);
 

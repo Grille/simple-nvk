@@ -41,7 +41,11 @@ export function main() {
   }
   let computePipeline = snvk.createComputePipeline(computePipelineCreateInfo);
 
-  let command = snvk.createCommandBuffer();
+  let commandCreateInfo = {
+    level: snvk.COMMAND_LEVEL_PRIMARY,
+    usage: snvk.COMMAND_USAGE_SIMULTANEOUS,
+  }
+  let command = snvk.createCommandBuffer(commandCreateInfo);
 
   snvk.cmdBegin(command);
 

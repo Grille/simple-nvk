@@ -3,10 +3,12 @@ import { pushHandle, deleteHandle, InitializedArray } from "./utils.mjs"
 
 export let commandBufferHandles = [];
 
-export function createCommandBuffer() {
+export function createCommandBuffer(createInfo) {
+  let { level, usage } = createInfo;
+
   let commandBufferAllocateInfo = new VkCommandBufferAllocateInfo();
   commandBufferAllocateInfo.commandPool = this.commandPool;
-  commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  commandBufferAllocateInfo.level = level;
   commandBufferAllocateInfo.commandBufferCount = 1;
 
   let commandBuffer = new VkCommandBuffer();
@@ -15,6 +17,8 @@ export function createCommandBuffer() {
 
   let handle = {
     vkCommandBuffer: commandBuffer,
+    level: level,
+    usage: usage,
   }
 
   pushHandle(this.commandBufferHandles, handle);
@@ -31,7 +35,7 @@ export function cmdBegin(commandBuffer) {
   let { vkCommandBuffer } = commandBuffer;
 
   let commandBufferBeginInfo = new VkCommandBufferBeginInfo();
-  commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+  commandBufferBeginInfo.flags = commandBuffer.usage;
   commandBufferBeginInfo.pInheritanceInfo = null;
 
   let result = vkBeginCommandBuffer(vkCommandBuffer, commandBufferBeginInfo);
@@ -87,7 +91,7 @@ export function cmdBeginRender(commandBuffer, pipeline, frambuffer) {
   scissor.extent.height = frambuffer.height;
  
   vkCmdSetViewport(cmdBuffer, 0, 1, [viewport]);
- 
+
   vkCmdSetScissor(cmdBuffer, 0, 1, [scissor]);
 */
 
@@ -96,7 +100,14 @@ export function cmdBindIndexBuffer(commandBuffer, indexBuffer) {
 
   vkCmdBindIndexBuffer(vkCommandBuffer, indexBuffer.vksLocal.vkBuffer, 0, VK_INDEX_TYPE_UINT32);
 }
-export function cmdDrawIndexed(commandBuffer,offset,length) {
+
+export function cmdDrawArrays(commandBuffer, offset, length) {
+  let { vkCommandBuffer } = commandBuffer;
+
+  vkCmdDraw(vkCommandBuffer, length, 1, offset, 0);
+}
+
+export function cmdDrawIndexed(commandBuffer, offset, length) {
   let { vkCommandBuffer } = commandBuffer;
 
   vkCmdDrawIndexed(vkCommandBuffer, length, 1, offset, 0, 0);
@@ -114,29 +125,6 @@ export function cmdEnd(commandBuffer) {
   this.assertVulkan(result);
 }
 
-export function submitFence(commandBuffer) {
-  let { vkCommandBuffer } = commandBuffer;
-
-  let submitInfo = new VkSubmitInfo();
-  submitInfo.commandBufferCount = 1;
-  submitInfo.pCommandBuffers = [vkCommandBuffer];
-
-  let fenceInfo = new VkFenceCreateInfo();
-
-  let fence = new VkFence();
-  let result = vkCreateFence(this.device, fenceInfo, null, fence);
-  this.assertVulkan(result);
-
-  result = vkQueueSubmit(this.queue, 1, [submitInfo], fence);
-  this.assertVulkan(result);
-
-  result = vkWaitForFences(this.device, 1, [fence], VK_TRUE, 60 * 1e9);
-  this.assertVulkan(result);
-
-  vkDestroyFence(this.device, fence, null);
-
-}
-
 export function cmdBindComputePipeline(commandBuffer, pipeline) {
   let { vkCommandBuffer } = commandBuffer;
 
@@ -148,6 +136,17 @@ export function cmdDispatch(commandBuffer, x = 1, y = 1, z = 1) {
   let { vkCommandBuffer } = commandBuffer;
 
   vkCmdDispatch(vkCommandBuffer, x | 0, y | 0, z | 0);
+}
+
+export function cmdCopyBuffer(commandBuffer, src, srcOffset, dst, dstOffset, length) {
+  let { vkCommandBuffer } = commandBuffer;
+
+  let bufferCopy = new VkBufferCopy();
+  bufferCopy.srcOffset = srcOffset;
+  bufferCopy.dstOffset = dstOffset;
+  bufferCopy.size = length;
+
+  vkCmdCopyBuffer(vkCommandBuffer, src.vksLocal.vkBuffer, dst.vksLocal.vkBuffer, 1, [bufferCopy]);
 }
 
 export function submit(submitInfo) {
