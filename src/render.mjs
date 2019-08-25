@@ -3,6 +3,7 @@ import fs from "fs";
 
 let lastResize = 0;
 let fpsDate = Date.now();
+let frameDate = Date.now();
 let fpsCount = 0;
 let snvk = null;
 let window = null;
@@ -17,7 +18,7 @@ let surface = null;
 let renderPass = null;
 let renderPipeline = null;
 let swapchain = null;
-let command = null;
+let commandbuffers = null;
 
 let ready = false;
 
@@ -139,17 +140,23 @@ function createPipeline() {
   }
   swapchain = snvk.createSwapchain(swapchainCreateInfo);
 
-  //snvk.drawIndexed(pipeline,framebuffer);
+  commandbuffers = [];
+  for (let i = 0; i < swapchain.framebuffers.length; i++) {
+    let framebuffer = swapchain.framebuffers[i];
+    let command = snvk.createCommandbuffer();
 
-  let commandCreateInfo = {
-    indexBuffer: buffers[0],
-    buffers: [buffers[1], buffers[2]],
-    pipeline: renderPipeline,
-    swapchain: swapchain,
-    framebuffers: swapchain.framebuffers,
-  };
+    snvk.cmdBegin(command);
 
-  command = snvk.createCommand(commandCreateInfo);
+    snvk.cmdBeginRender(command, renderPipeline, framebuffer);
+    snvk.cmdBindIndexBuffer(command, buffers[0]);
+    snvk.cmdDrawIndexed(command);
+
+    snvk.cmdEndRender(command);
+
+    snvk.cmdEnd(command);
+
+    commandbuffers[i] = command;
+  }
   ready = true;
 }
 
@@ -166,10 +173,9 @@ function destroyPipline(){
 }
 
 function drawFrame() {
-  let framebuffer = snvk.getNextSwapchainFramebuffer(swapchain);
-  snvk.drawIndexed(renderPipeline, framebuffer, buffers[0]);
+  let index = snvk.getNextSwapchainIndex(swapchain);
+  snvk.submit(commandbuffers[index]);
   snvk.present(swapchain);
-  //snvk.drawFrame(swapchain);
 }
 
 function eventLoop() {
@@ -179,7 +185,10 @@ function eventLoop() {
   else {
     window.pollEvents();
     if (ready) {
-      drawFrame();
+      if ((Date.now() - frameDate) > 2000) {
+        frameDate = Date.now();
+        drawFrame();
+      }
     }
     if (lastResize !== 0 && Date.now() - lastResize > 100 && (window.width > 0 && window.height > 0)) {
       lastResize = 0;

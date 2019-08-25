@@ -4,7 +4,7 @@ import { pushHandle, deleteHandle, InitializedArray } from "./utils.mjs"
 export let swapchainHandles = [];
 
 export function createSwapchain(createInfo) {
-  let { renderPass,surface, width, height} = createInfo;
+  let { renderPass, surface, width, height } = createInfo;
   let swapchainCreateInfo = new VkSwapchainCreateInfoKHR();
   swapchainCreateInfo.surface = surface.vkSurface;
   swapchainCreateInfo.minImageCount = 2;
@@ -65,13 +65,18 @@ export function createSwapchain(createInfo) {
   return handle;
 }
 
-export function getNextSwapchainFramebuffer(swapchain){
+
+export function getNextSwapchainIndex(swapchain) {
   let imageIndex = { $: 0 };
   vkAcquireNextImageKHR(this.device, swapchain.vkSwapchain, 1E5, this.semaphores.imageAviable, null, imageIndex);
-  return swapchain.framebuffers[swapchain.imageIndex = imageIndex.$];
+  return swapchain.imageIndex = imageIndex.$;
 }
 
-export function present(swapchain){
+export function getNextSwapchainFramebuffer(swapchain) {
+  return swapchain.framebuffers[this.getNextSwapchainIndex(swapchain)];
+}
+
+export function present(swapchain) {
   let presentInfoKHR = new VkPresentInfoKHR();
   presentInfoKHR.waitSemaphoreCount = 1;
   presentInfoKHR.pWaitSemaphores = [this.semaphores.renderingDone];
