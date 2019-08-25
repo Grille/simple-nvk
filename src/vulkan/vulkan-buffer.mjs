@@ -73,22 +73,10 @@ export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null)
   let result = vkMapMemory(this.device, handle.vksHost.vkMemory, offsetDst, length, 0, dataPtr);
   this.assertVulkan(result);
 
-  let buffer = ArrayBuffer.fromAddress(dataPtr.$, length);
-  let srcView = new Uint8Array(data.buffer);
-  let dstView = new Uint8Array(buffer);
-  for (let i = 0; i < length; ++i) {
-    dstView[i + offsetDst] = srcView[i + offsetSrc];
-  };
+  let dstView = new Uint8Array(ArrayBuffer.fromAddress(dataPtr.$, length));
+  let srcView = new Uint8Array(data.buffer).subarray(offsetSrc, offsetSrc + length);
+  dstView.set(srcView, offsetDst);
 
-  //let test = new Float64Array(dstView.buffer);
-  //console.log(test);
-  /*
-  let mappedBuffer = ArrayBuffer.fromAddress(dataPtr.$, length*stride);
-  let srcView = new Uint8Array(data.buffer);
-  let dstView = new Uint8Array(mappedBuffer);
-  dstView.set(srcView, 0x0);
-  */
-  
   vkUnmapMemory(this.device, handle.vksHost.vkMemory);
 
   this.copyVkBuffer(handle.vksHost.vkBuffer, handle.vksLocal.vkBuffer, offsetDst, length);

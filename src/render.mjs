@@ -25,6 +25,10 @@ let commandbuffers = null;
 
 let ready = false;
 
+let indexData = new Uint32Array([
+  0, 1, 2,
+  0, 3, 1,
+])
 let posData = new Float32Array([
   -0.5, -0.5,
   0.5, 0.5,
@@ -36,10 +40,6 @@ let colorData = new Float32Array([
   0, 1, 0, 1,
   0, 0, 1, 1,
   1, 1, 0, 1,
-])
-let indexData = new Uint32Array([
-  0, 1, 2,
-  0, 3, 1,
 ])
 
 
@@ -87,30 +87,30 @@ function createInput() {
   let fragShader = snvk.createShader(fragCreateInfo);
 
   let indexBufferCreateInfo = {
-    size: 2 * 4 * 3,
+    size: indexData.byteLength,
     usage: snvk.BUFFER_USAGE_INDEX,
   }
   let posBufferCreateInfo = {
-    size: 6 * 4 * 2,
+    size: posData.byteLength,
     usage: snvk.BUFFER_USAGE_VERTEX,
   }
   let colorBufferCreateInfo = {
-    size: 6 * 4 * 4,
+    size: colorData.byteLength,
     usage: snvk.BUFFER_USAGE_VERTEX,
   }
 
   let indexBuffer = snvk.createBuffer(indexBufferCreateInfo);
-  snvk.bufferSubData(indexBuffer, 0, indexData, 0, 2 * 4 * 3);
+  snvk.bufferSubData(indexBuffer, 0, indexData, 0, indexData.byteLength);
 
   let posBuffer = snvk.createBuffer(posBufferCreateInfo);
   let posBinding = snvk.getBinding(posBuffer, 0, 4 * 2);
   let posAttrib = snvk.getAttribute(posBinding, 0, snvk.TYPE_FLOAT32, 2);
-  snvk.bufferSubData(posBuffer, 0, posData, 0, 6 * 4 * 2);
+  snvk.bufferSubData(posBuffer, 0, posData, 0, posData.byteLength);
 
   let colorBuffer = snvk.createBuffer(colorBufferCreateInfo);
   let colorBinding = snvk.getBinding(colorBuffer, 1, 4 * 4);
   let colorAttrib = snvk.getAttribute(colorBinding, 1, snvk.TYPE_FLOAT32, 4);
-  snvk.bufferSubData(colorBuffer, 0, colorData, 0, 6 * 4 * 4);
+  snvk.bufferSubData(colorBuffer, 0, colorData, 0, colorData.byteLength);
 
   buffers = [indexBuffer, posBuffer, colorBuffer];
   shaders = [vertShader, fragShader];
@@ -158,7 +158,7 @@ function createPipeline() {
 
     snvk.cmdBeginRender(command, renderPipeline, framebuffer);
     snvk.cmdBindIndexBuffer(command, buffers[0]);
-    snvk.cmdDrawIndexed(command, 0, 6);
+    snvk.cmdDrawIndexed(command, 0, indexData.length);
 
     snvk.cmdEndRender(command);
 
