@@ -32,10 +32,10 @@ let posData = new Float32Array([
   0.5, -0.5,
 ])
 let colorData = new Float32Array([
-  1, 0, 0,
-  0, 1, 0,
-  0, 0, 1,
-  1, 1, 0,
+  1, 0, 0, 1,
+  0, 1, 0, 1,
+  0, 0, 1, 1,
+  1, 1, 0, 1,
 ])
 let indexData = new Uint32Array([
   0, 1, 2,
@@ -98,7 +98,7 @@ function createInput() {
     usage: snvk.BUFFER_USAGE_VERTEX,
   }
   let colorBufferCreateInfo = {
-    size: 6 * 4 * 3,
+    size: 6 * 4 * 4,
     usage: snvk.BUFFER_USAGE_VERTEX,
   }
 
@@ -111,9 +111,9 @@ function createInput() {
   snvk.bufferSubData(posBuffer, 0, posData, 0, 6 * 4 * 2);
 
   let colorBuffer = snvk.createBuffer(colorBufferCreateInfo);
-  let colorBinding = snvk.getBinding(colorBuffer, 1, 4 * 3);
-  let colorAttrib = snvk.getAttribute(colorBinding, 1, snvk.TYPE_FLOAT32, 3);
-  snvk.bufferSubData(colorBuffer, 0, colorData, 0, 6 * 4 * 3);
+  let colorBinding = snvk.getBinding(colorBuffer, 1, 4 * 4);
+  let colorAttrib = snvk.getAttribute(colorBinding, 1, snvk.TYPE_FLOAT32, 4);
+  snvk.bufferSubData(colorBuffer, 0, colorData, 0, 6 * 4 * 4);
 
   buffers = [indexBuffer, posBuffer, colorBuffer];
   shaders = [vertShader, fragShader];
@@ -130,6 +130,7 @@ function createPipeline() {
     shaders: shaders,
     bindings: bindings,
     attributes: attributes,
+    backgroundColor: [0, 0, 0.5, 1],
   }
   renderPipeline = snvk.createRenderPipeline(renderPipelineCreateInfo);
 

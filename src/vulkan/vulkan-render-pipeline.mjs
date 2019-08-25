@@ -68,9 +68,19 @@ export function destroyRenderPass(handle){
   vkDestroyRenderPass(this.device, handle.vkRenderPass, null);
   deleteHandle(this.renderPassHandles, handle);
 }
+
 export function createRenderPipeline(createInfo) {
   let result;
-  let { renderPass, shaders, bindings, attributes, viewport = null } = createInfo;
+  let {
+    renderPass, shaders, bindings, attributes, backgroundColor = [0, 0, 0, 1], rasterizationInfo = {}, blendingInfo = {}, viewport = null, basePipeline = null 
+  } = createInfo;
+  let {
+    polygonMode = VK_POLYGON_MODE_FILL, cullMode = VK_CULL_MODE_BACK_BIT, frontFace = VK_FRONT_FACE_CLOCKWISE, lineWidth = 1 
+  } = rasterizationInfo;
+  let {
+    srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA, dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, colorBlendOp = VK_BLEND_OP_ADD, 
+    srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE, dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO, alphaBlendOp = VK_BLEND_OP_ADD, enabled = true,
+  } = blendingInfo;
 
   let vertexBindings = [];
   for (let i = 0; i < bindings.length; i++) {
@@ -94,10 +104,10 @@ export function createRenderPipeline(createInfo) {
   let rasterizationCreateInfo = new VkPipelineRasterizationStateCreateInfo();
   rasterizationCreateInfo.depthClampEnable = false;
   rasterizationCreateInfo.rasterizerDiscardEnable = false;
-  rasterizationCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
-  rasterizationCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-  rasterizationCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
-  rasterizationCreateInfo.lineWidth = 1;
+  rasterizationCreateInfo.polygonMode = polygonMode;
+  rasterizationCreateInfo.cullMode = cullMode;
+  rasterizationCreateInfo.frontFace = frontFace;
+  rasterizationCreateInfo.lineWidth = lineWidth;
 
   let multisampleCreateInfo = new VkPipelineMultisampleStateCreateInfo();
   multisampleCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -108,13 +118,13 @@ export function createRenderPipeline(createInfo) {
   multisampleCreateInfo.alphaToOneEnable = false;
 
   let colorBlendAttachmentState = new VkPipelineColorBlendAttachmentState();
-  colorBlendAttachmentState.blendEnable = true;
-  colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-  colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-  colorBlendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
-  colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-  colorBlendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-  colorBlendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
+  colorBlendAttachmentState.blendEnable = enabled;
+  colorBlendAttachmentState.srcColorBlendFactor = srcColorBlendFactor;
+  colorBlendAttachmentState.dstColorBlendFactor = dstColorBlendFactor;
+  colorBlendAttachmentState.colorBlendOp = colorBlendOp;
+  colorBlendAttachmentState.srcAlphaBlendFactor = srcAlphaBlendFactor;
+  colorBlendAttachmentState.dstAlphaBlendFactor = dstAlphaBlendFactor;
+  colorBlendAttachmentState.alphaBlendOp = alphaBlendOp;
   colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
   let colorBlendStateCreateInfo = new VkPipelineColorBlendStateCreateInfo();
@@ -122,9 +132,6 @@ export function createRenderPipeline(createInfo) {
   colorBlendStateCreateInfo.logicOp = VK_LOGIC_OP_NO_OP;
   colorBlendStateCreateInfo.attachmentCount = 1;
   colorBlendStateCreateInfo.pAttachments = [colorBlendAttachmentState];
-  //colorBlendStateCreateInfo.blendConstants = [0.0, 0.0, 0.0, 0.0];
-
-  //VK_FORMAT_B8G8R8A8_UNORM
 
   let dynamicStates = new Int32Array([
     //VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR
@@ -149,7 +156,7 @@ export function createRenderPipeline(createInfo) {
   graphicsPipelineCreateInfo.layout = pipelineLayout;
   graphicsPipelineCreateInfo.renderPass = renderPass.vkRenderPass;
   graphicsPipelineCreateInfo.subpass = 0;
-  graphicsPipelineCreateInfo.basePipelineHandle = null;
+  graphicsPipelineCreateInfo.basePipelineHandle = basePipeline;
   graphicsPipelineCreateInfo.basePipelineIndex = -1;
 
   let pipeline = new VkPipeline();
@@ -160,7 +167,8 @@ export function createRenderPipeline(createInfo) {
     vkLayout: pipelineLayout,
     vkRenderPass: renderPass.vkRenderPass,
     vkPipeline: pipeline,
-    vertexBindings:vertexBindings,
+    vertexBindings: vertexBindings,
+    backgroundColor: backgroundColor,
   }
   pushHandle(this.renderPipelineHandles, handle);
   return handle;

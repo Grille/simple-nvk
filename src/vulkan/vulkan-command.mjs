@@ -42,7 +42,7 @@ export function cmdBegin(commandBuffer) {
   this.assertVulkan(result);
 }
 
-export function cmdBeginRender(commandBuffer, pipeline, frambuffer) {
+export function cmdBeginRender(commandBuffer, pipeline, frambuffer, backColor) {
   let { vkCommandBuffer } = commandBuffer;
 
   let renderPassBeginInfo = new VkRenderPassBeginInfo();
@@ -55,7 +55,7 @@ export function cmdBeginRender(commandBuffer, pipeline, frambuffer) {
   renderPassBeginInfo.clearValueCount = 1;
   renderPassBeginInfo.pClearValues = [new VkClearValue({
     color: new VkClearColorValue({
-      float32: [0, 0, 0.5, 1],
+      float32: pipeline.backgroundColor,
     }),
     depthStencil: null,
   })];
