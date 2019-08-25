@@ -150,7 +150,8 @@ export function cmdCopyBuffer(commandBuffer, src, srcOffset, dst, dstOffset, len
 }
 
 export function submit(submitInfo) {
-  let { commandBuffer, waitSemaphore = null, signalSemaphore = null, blocking = false } = submitInfo;
+  let { commandBuffer, waitSemaphore = null, signalSemaphore = null, signalFence = {}, blocking = false } = submitInfo;
+  let { vkFence = null } = signalFence;
 
   let vkSubmitInfo = new VkSubmitInfo();
   vkSubmitInfo.pWaitDstStageMask = new Int32Array([VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT]);
@@ -166,22 +167,16 @@ export function submit(submitInfo) {
   }
 
   if (blocking) {
-    let fenceInfo = new VkFenceCreateInfo();
-    let fence = new VkFence();
-
-    let result = vkCreateFence(this.device, fenceInfo, null, fence);
+    let fence = this.createFence();
+  
+    let result = vkQueueSubmit(this.queue, 1, [vkSubmitInfo], fence.vkFence);
     this.assertVulkan(result);
   
-    result = vkQueueSubmit(this.queue, 1, [vkSubmitInfo], fence);
-    this.assertVulkan(result);
-  
-    result = vkWaitForFences(this.device, 1, [fence], true, 60 * 1E9);
-    this.assertVulkan(result);
-  
-    vkDestroyFence(this.device, fence, null);
+    this.waitForFence(fence, 60 * 1E3);
+    this.destroyFence(fence);
   }
   else {
-    let result = vkQueueSubmit(this.queue, 1, [vkSubmitInfo], null);
+    let result = vkQueueSubmit(this.queue, 1, [vkSubmitInfo], vkFence);
     this.assertVulkan(result);
   }
 
