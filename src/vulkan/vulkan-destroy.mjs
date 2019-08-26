@@ -29,7 +29,7 @@ function destroyArray(arg0, array, func) {
     }
   }
 }
-export function waitIdle(){
+export function waitForIdle() {
   vkDeviceWaitIdle(this.device);
 }
 

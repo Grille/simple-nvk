@@ -6,15 +6,14 @@ export let bufferHandles = [];
 export let indexBufferHandle = null;
 
 export function createBuffer(createInfo) {
-  let { size, usage, readable = false} = createInfo;
+  let { size, usage, staging = this.BUFFER_STAGING_DYNAMIC, readable = false } = createInfo;
 
   let vkUsageBits = this.getVkBufferUsageBits(usage, readable);
 
-  let hostBuffer = this.createVkBuffer(
-    size,
-    vkUsageBits.host,
-    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-  );
+  let hostBuffer = null;
+  if (staging === this.BUFFER_STAGING_STATIC) {
+    hostBuffer = this.createVkHostBuffer(size, vkUsageBits.host);
+  }
   let localBuffer = this.createVkBuffer(
     size,
     vkUsageBits.local,
@@ -25,6 +24,8 @@ export function createBuffer(createInfo) {
     id: -1,
     vksHost: hostBuffer,
     vksLocal: localBuffer,
+    vkUsageBits: vkUsageBits,
+    staging: staging,
     usage: usage,
     size: size,
     readable: readable,
@@ -33,6 +34,14 @@ export function createBuffer(createInfo) {
   pushHandle(this.bufferHandles, bufferHandle);
 
   return bufferHandle;
+}
+
+export function createVkHostBuffer(size, bufferUsageFlags) {
+  return this.createVkBuffer(
+    size,
+    bufferUsageFlags,
+    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+  );
 }
 
 export function createVkBuffer(bufferSize,bufferUsageFlags,memoryPropertieFlags){
@@ -67,9 +76,18 @@ export function createVkBuffer(bufferSize,bufferUsageFlags,memoryPropertieFlags)
     vkMemory: memory,
   }
 }
+export function destroyVkBuffer(buffer) {
+  vkFreeMemory(this.device, buffer.vkMemory);
+  vkDestroyBuffer(this.device, buffer.vkBuffer, null);
+}
 export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null) {
   let dataPtr = { $: 0n };
-  if (length === null) length = data.buffer.length;
+  if (length === null) length = data.buffer.size;
+
+  if (handle.staging === this.BUFFER_STAGING_DYNAMIC) {
+    handle.vksHost = this.createVkHostBuffer(handle.size, handle.vkUsageBits.host);
+  }
+
   let result = vkMapMemory(this.device, handle.vksHost.vkMemory, offsetDst, length, 0, dataPtr);
   this.assertVulkan(result);
 
@@ -80,10 +98,18 @@ export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null)
   vkUnmapMemory(this.device, handle.vksHost.vkMemory);
 
   this.copyVkBuffer(handle.vksHost.vkBuffer, handle.vksLocal.vkBuffer, offsetDst, length);
+
+  if (handle.staging === this.BUFFER_STAGING_DYNAMIC) {
+    this.destroyVkBuffer(handle.vksHost);
+  }
 }
 export function bufferReadData(handle, offset = 0, length = null) {
   let dataPtr = { $: 0n };
   if (length === null) length = handle.size;
+
+  if (handle.staging === this.BUFFER_STAGING_DYNAMIC) {
+    handle.vksHost = this.createVkHostBuffer(handle.size, handle.vkUsageBits.host);
+  }
 
   this.copyVkBuffer(handle.vksLocal.vkBuffer, handle.vksHost.vkBuffer, offset, length);
 
@@ -92,6 +118,10 @@ export function bufferReadData(handle, offset = 0, length = null) {
 
   let buffer = ArrayBuffer.fromAddress(dataPtr.$, length);
 
+  if (handle.staging === this.BUFFER_STAGING_DYNAMIC) {
+    this.destroyVkBuffer(handle.vksHost);
+  }
+  
   return buffer;
 }
 export function copyBuffer(srcHandle, dstHandle, offset, size) {
@@ -126,10 +156,10 @@ export function copyVkBuffer(src, dst, offset, size) {
 export function destroyBuffer(handle) {
   if (handle.id === -1) return;
   this.bufferChanged = true;
-  vkFreeMemory(this.device, handle.vksHost.vkMemory);
-  vkDestroyBuffer(this.device, handle.vksHost.vkBuffer, null);
-  vkFreeMemory(this.device, handle.vksLocal.vkMemory);
-  vkDestroyBuffer(this.device, handle.vksLocal.vkBuffer, null);
+  if (handle.staging === this.BUFFER_STAGING_STATIC) {
+    this.destroyVkBuffer(handle.vksHost);
+  }
+  this.destroyVkBuffer(handle.vksLocal);
   deleteHandle(this.bufferHandles, handle);
 }
 export function getAttribute(binding, location, type, size, offset = 0) {
@@ -171,12 +201,7 @@ export function getVkBufferUsageBits(usage, readable) {
     host |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     local |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
   }
-  switch (usage) {
-    case this.BUFFER_USAGE_VERTEX: local |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT; break;
-    case this.BUFFER_USAGE_INDEX: local |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT; break;
-    case this.BUFFER_USAGE_STORAGE: local |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT; break;
-    case this.BUFFER_USAGE_UNIFORM: local |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT; break;
-  }
+  local |= usage;
   return { host, local };
 }
 export function findMemoryTypeIndex(typeFilter, properties) {

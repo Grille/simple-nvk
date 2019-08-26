@@ -124,7 +124,7 @@ export function createBufferInput(bindings,attributes) {
     vertexAttribute.location = attribute.location;
     vertexAttribute.binding = attribute.binding.binding;
     vertexAttribute.format = attribute.format;
-    vertexAttribute.offset = 0;
+    vertexAttribute.offset = attribute.offset;
 
     vertexAttributes[i] = vertexAttribute;
   }

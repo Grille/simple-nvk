@@ -172,7 +172,7 @@ function createPipeline() {
 function destroyPipline() {
   ready = false;
 
-  snvk.waitIdle();
+  snvk.waitForIdle();
 
   snvk.destroySwapchain(swapchain);
   snvk.destroySurface(surface);
