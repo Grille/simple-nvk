@@ -84,20 +84,22 @@ export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null)
   let dataPtr = { $: 0n };
   if (length === null) length = data.buffer.size;
 
+  let offsetHost = offsetDst;
   if (handle.staging === this.BUFFER_STAGING_DYNAMIC) {
-    handle.vksHost = this.createVkHostBuffer(handle.size, handle.vkUsageBits.host);
+    handle.vksHost = this.createVkHostBuffer(length, handle.vkUsageBits.host);
+    offsetHost = 0;
   }
 
-  let result = vkMapMemory(this.device, handle.vksHost.vkMemory, offsetDst, length, 0, dataPtr);
+  let result = vkMapMemory(this.device, handle.vksHost.vkMemory, offsetHost, length, 0, dataPtr);
   this.assertVulkan(result);
 
   let dstView = new Uint8Array(ArrayBuffer.fromAddress(dataPtr.$, length));
   let srcView = new Uint8Array(data.buffer).subarray(offsetSrc, offsetSrc + length);
-  dstView.set(srcView, offsetDst);
+  dstView.set(srcView, 0);
 
   vkUnmapMemory(this.device, handle.vksHost.vkMemory);
 
-  this.copyVkBuffer(handle.vksHost.vkBuffer, handle.vksLocal.vkBuffer, offsetDst, length);
+  this.copyVkBuffer(handle.vksHost.vkBuffer, handle.vksLocal.vkBuffer, offsetHost, offsetDst, length);
 
   if (handle.staging === this.BUFFER_STAGING_DYNAMIC) {
     this.destroyVkBuffer(handle.vksHost);
@@ -107,13 +109,15 @@ export function bufferReadData(handle, offset = 0, length = null) {
   let dataPtr = { $: 0n };
   if (length === null) length = handle.size;
 
+  let offsetHost = offset;
   if (handle.staging === this.BUFFER_STAGING_DYNAMIC) {
-    handle.vksHost = this.createVkHostBuffer(handle.size, handle.vkUsageBits.host);
+    handle.vksHost = this.createVkHostBuffer(length, handle.vkUsageBits.host);
+    offsetHost = 0;
   }
 
-  this.copyVkBuffer(handle.vksLocal.vkBuffer, handle.vksHost.vkBuffer, offset, length);
+  this.copyVkBuffer(handle.vksLocal.vkBuffer, handle.vksHost.vkBuffer, offset, offsetHost, length);
 
-  let result = vkMapMemory(this.device, handle.vksHost.vkMemory, offset, length, 0, dataPtr);
+  let result = vkMapMemory(this.device, handle.vksHost.vkMemory, offsetHost, length, 0, dataPtr);
   this.assertVulkan(result);
 
   let buffer = ArrayBuffer.fromAddress(dataPtr.$, length);
@@ -121,13 +125,13 @@ export function bufferReadData(handle, offset = 0, length = null) {
   if (handle.staging === this.BUFFER_STAGING_DYNAMIC) {
     this.destroyVkBuffer(handle.vksHost);
   }
-  
+
   return buffer;
 }
-export function copyBuffer(srcHandle, dstHandle, offset, size) {
-  this.copyVkBuffer(srcHandle.vksLocal.vkBuffer, dstHandle.vksLocal.vkBuffer, offset, size);
+export function copyBuffer(srcHandle, dstHandle, offsetSrc,offsetDst, size) {
+  this.copyVkBuffer(srcHandle.vksLocal.vkBuffer, dstHandle.vksLocal.vkBuffer, offsetSrc, offsetDst, size);
 }
-export function copyVkBuffer(src, dst, offset, size) {
+export function copyVkBuffer(src, dst, offsetSrc, offsetDst, size) {
 
   let commandCreateInfo = {
     level: this.COMMAND_LEVEL_PRIMARY,
@@ -138,8 +142,8 @@ export function copyVkBuffer(src, dst, offset, size) {
   let { vkCommandBuffer } = commandBuffer;
 
   let bufferCopy = new VkBufferCopy();
-  bufferCopy.srcOffset = offset;
-  bufferCopy.dstOffset = offset;
+  bufferCopy.srcOffset = offsetSrc;
+  bufferCopy.dstOffset = offsetDst;
   bufferCopy.size = size;
   vkCmdCopyBuffer(vkCommandBuffer, src, dst, 1, [bufferCopy]);
 
