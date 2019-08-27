@@ -27,6 +27,7 @@ export function createCommandBuffer(createInfo) {
 }
 
 export function destroyCommandBuffer(handle) {
+  if (handle.id === -1) return;
   vkFreeCommandBuffers(this.device, this.commandPool, 1, [handle.vkCommandBuffer]);
   deleteHandle(this.commandBufferHandles, handle);
 }

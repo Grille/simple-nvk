@@ -18,6 +18,7 @@ export function createSemaphore() {
 }
 
 export function destroySemaphore(handle) {
+  if (handle.id === -1) return;
   vkDestroySemaphore(this.device, handle.vkSemaphore, null);
   deleteHandle(this.semaphoreHandles, handle);
 }
@@ -42,6 +43,7 @@ export function waitForFence(handle,timeout){
 }
 
 export function destroyFence(handle) {
+  if (handle.id === -1) return;
   vkDestroyFence(this.device, handle.vkFence, null);
   deleteHandle(this.fenceHandles, handle);
 }

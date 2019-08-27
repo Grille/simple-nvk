@@ -63,8 +63,8 @@ export function createRenderPass(createInfo) {
 
   return handle;
 }
-export function destroyRenderPass(handle){
-  if (handle.id===-1)return;
+export function destroyRenderPass(handle) {
+  if (handle.id === -1) return;
   vkDestroyRenderPass(this.device, handle.vkRenderPass, null);
   deleteHandle(this.renderPassHandles, handle);
 }

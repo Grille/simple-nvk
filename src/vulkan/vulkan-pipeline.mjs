@@ -1,5 +1,6 @@
-import { InitializedArray } from "./utils.mjs"
+import { pushHandle, deleteHandle, InitializedArray } from "./utils.mjs"
 
+export let pipelineLayoutHandles = [];
 
 export function createPipelineLayout(descriptors, flags) {
   let result = 0;
@@ -19,14 +20,14 @@ export function createPipelineLayout(descriptors, flags) {
     for (let i2 = 0; i2 < bindings.length; i2++) {
       let { binding } = bindings[i2];
 
-      let storageLayoutBinding = new VkDescriptorSetLayoutBinding();
-      storageLayoutBinding.binding = binding;
-      storageLayoutBinding.descriptorType = type;
-      storageLayoutBinding.descriptorCount = 1;
-      storageLayoutBinding.stageFlags = flags;
-      storageLayoutBinding.pImmutableSamplers = null;
+      let layoutBinding = new VkDescriptorSetLayoutBinding();
+      layoutBinding.binding = binding;
+      layoutBinding.descriptorType = type;
+      layoutBinding.descriptorCount = 1;
+      layoutBinding.stageFlags = flags;
+      layoutBinding.pImmutableSamplers = null;
 
-      layoutBindings[i2] = storageLayoutBinding;
+      layoutBindings[i2] = layoutBinding;
     }
 
     let layoutInfo = new VkDescriptorSetLayoutCreateInfo();
@@ -69,7 +70,7 @@ export function createPipelineLayout(descriptors, flags) {
   result = vkAllocateDescriptorSets(this.device, descriptorSetAllocInfo, descriptorSets);
   this.assertVulkan(result);
 
-  for (let i = 0; i < descriptors.length; i++) {
+  for (let i = 0; i < descriptorSets.length; i++) {
     let { bindings, type } = descriptors[i];
     let writeDescriptorSets = [];
 
@@ -105,20 +106,26 @@ export function createPipelineLayout(descriptors, flags) {
   result = vkCreatePipelineLayout(this.device, pipelineLayoutInfo, null, pipelineLayout);
   this.assertVulkan(result);
 
-  return {
+  let handle = {
     vkPipelineLayout: pipelineLayout,
     vkPool: descriptorPool,
     vkaSetLayouts: descriptorSetLayouts,
     vkaSets: descriptorSets,
   }
+
+  pushHandle(this.pipelineLayoutHandles, handle);
+
+  return handle;
 }
 
-export function destroyPipelineLayout(object) {
-  for (let i = 0; i < object.vkaSetLayouts.length; i++) {
-    vkDestroyDescriptorSetLayout(this.device, object.vkaSetLayouts[i], null);
+export function destroyPipelineLayout(handle) {
+  if (handle.id === -1) return;
+  for (let i = 0; i < handle.vkaSetLayouts.length; i++) {
+    vkDestroyDescriptorSetLayout(this.device, handle.vkaSetLayouts[i], null);
   }
-  vkDestroyDescriptorPool(this.device, object.vkPool, null);
-  vkDestroyPipelineLayout(this.device, object.vkPipelineLayout, null);
+  vkDestroyDescriptorPool(this.device, handle.vkPool, null);
+  vkDestroyPipelineLayout(this.device, handle.vkPipelineLayout, null);
+  deleteHandle(this.pipelineLayoutHandles, handle);
 }
 
 export function createShaderInput(shaders) {
