@@ -47,3 +47,7 @@ export function destroyFence(handle) {
   vkDestroyFence(this.device, handle.vkFence, null);
   deleteHandle(this.fenceHandles, handle);
 }
+
+export function waitForIdle() {
+  vkDeviceWaitIdle(this.device);
+}

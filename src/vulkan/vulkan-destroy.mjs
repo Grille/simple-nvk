@@ -1,9 +1,5 @@
 import nvk from "nvk"
 
-function destroy(arg0=null,arg1=null,func){
-  if (arg0 !== null && arg1 !== null);
-  func(arg0, arg1, null);
-}
 function destroyHandles(handles, func) {
   for (let i = 0; i < handles.length; i++) {
     let handle = handles[i];
@@ -12,25 +8,6 @@ function destroyHandles(handles, func) {
     }
   }
   handles.length = 0;
-}
-function destroyObject(arg0, obj, func) {
-  for (let key in obj) {
-    if (obj[key] !== null) {
-      func(arg0, obj[key], null);
-      obj[key] = null;
-    }
-  };
-}
-function destroyArray(arg0, array, func) {
-  for (let i = 0; i < array.length; i++) {
-    if (array[i] !== null) {
-      func(arg0, array[i], null);
-      array[i] = null;
-    }
-  }
-}
-export function waitForIdle() {
-  vkDeviceWaitIdle(this.device);
 }
 
 export function shutdownVulkan() {
@@ -49,12 +26,10 @@ export function shutdownVulkan() {
   destroyHandles(this.computePipelineHandles, (a) => this.destroyComputePipeline(a));
   destroyHandles(this.pipelineLayoutHandles, (a) => this.destroyPipelineLayout(a));
 
-  destroy(this.device, this.commandPool, vkDestroyCommandPool);
-  this.commandPool = null;
-  
   destroyHandles(this.bufferHandles, (a) => this.destroyBuffer(a));
   destroyHandles(this.shaderHandles, (a) => this.destroyShader(a));
 
+  vkDestroyCommandPool(this.device, this.commandPool, null);
   vkDestroyDevice(this.device, null);
   vkDestroyInstance(this.instance, null);
 }
