@@ -72,7 +72,7 @@ export function destroyRenderPass(handle){
 export function createRenderPipeline(createInfo) {
   let result;
   let {
-    renderPass, shaders, bindings, attributes, 
+    renderPass, shaders, vertexBindings = [], storageBindings = [], uniformBindings = [], attributes, 
     backgroundColor = [0, 0, 0, 1], 
     rasterizationInfo = {}, blendingInfo = {}, assemblyInfo = {},
     viewport = null, basePipeline = null 
@@ -88,24 +88,15 @@ export function createRenderPipeline(createInfo) {
     srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE, dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO, alphaBlendOp = VK_BLEND_OP_ADD, enabled = true,
   } = blendingInfo;
 
-  let vertexBindings = [];
-  for (let i = 0; i < bindings.length; i++) {
-    let binding = bindings[i];
-    if (binding.buffer.usage === this.BUFFER_USAGE_VERTEX) {
-      vertexBindings[vertexBindings.length] = binding;
-    }
-  }
-
   let shaderInputInfo = this.createShaderInput(shaders);
-  let bufferInputInfo = this.createBufferInput(vertexBindings,attributes);
-
-  let pipelineLayoutInfo = new VkPipelineLayoutCreateInfo();
-  pipelineLayoutInfo.setLayoutCount = 0;
-  pipelineLayoutInfo.pushConstantRangeCount = 0;
-
-  let pipelineLayout = new VkPipelineLayout();
-  result = vkCreatePipelineLayout(this.device, pipelineLayoutInfo, null, pipelineLayout);
-  this.assertVulkan(result);
+  let bufferInputInfo = this.createBufferInput(vertexBindings, attributes);
+  let pipelineLayout = this.createPipelineLayout(
+    [
+      //{ bindings: storageBindings, type: VK_DESCRIPTOR_TYPE_STORAGE_BUFFER },
+      { bindings: uniformBindings, type: VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER },
+    ],
+    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+  )
 
   let assemblyCreateInfo = new VkPipelineInputAssemblyStateCreateInfo();
   assemblyCreateInfo.topology = topology;
@@ -163,7 +154,7 @@ export function createRenderPipeline(createInfo) {
   graphicsPipelineCreateInfo.pDepthStencilState = null;
   graphicsPipelineCreateInfo.pColorBlendState = colorBlendStateCreateInfo;
   graphicsPipelineCreateInfo.pDynamicState = dynamicStateCreateInfo;
-  graphicsPipelineCreateInfo.layout = pipelineLayout;
+  graphicsPipelineCreateInfo.layout = pipelineLayout.vkPipelineLayout;
   graphicsPipelineCreateInfo.renderPass = renderPass.vkRenderPass;
   graphicsPipelineCreateInfo.subpass = 0;
   graphicsPipelineCreateInfo.basePipelineHandle = basePipeline;
@@ -174,7 +165,7 @@ export function createRenderPipeline(createInfo) {
   this.assertVulkan(result);
 
   let handle = {
-    vkLayout: pipelineLayout,
+    layout: pipelineLayout,
     vkRenderPass: renderPass.vkRenderPass,
     vkPipeline: pipeline,
     vertexBindings: vertexBindings,
@@ -186,8 +177,9 @@ export function createRenderPipeline(createInfo) {
 
 export function destroyRenderPipeline(handle) {
   if (handle.id === -1) return;
+  this.destroyPipelineLayout(handle.layout);
   vkDestroyPipeline(this.device, handle.vkPipeline, null);
-  vkDestroyPipelineLayout(this.device, handle.vkLayout, null);
+
   deleteHandle(this.renderPipelineHandles, handle);
 }
 //export function pipelineSetViewport(pipeline,viewport);

@@ -53,8 +53,6 @@ export function shutdownVulkan() {
   destroyHandles(this.bufferHandles, (a) => this.destroyBuffer(a));
   destroyHandles(this.shaderHandles, (a) => this.destroyShader(a));
 
-  destroyObject(this.device, this.semaphores, vkDestroySemaphore);
-
   vkDestroyDevice(this.device, null);
   vkDestroyInstance(this.instance, null);
 }

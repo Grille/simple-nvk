@@ -1,104 +1,138 @@
 import { InitializedArray } from "./utils.mjs"
 
-export function getVkBindingDescriptors(handles, type, flags) {
 
-  let storageLayoutBindings = [];
-  for (let i = 0; i < handles.length; i++) {
-    let { binding } = handles[i];
+export function createPipelineLayout(descriptors, flags) {
+  let result = 0;
+  let descriptorSetLayouts = [];
+  let descriptorPoolSizes = [];
+  let descriptorTypes = [];
+  let maxSets = 0;
 
-    let storageLayoutBinding = new VkDescriptorSetLayoutBinding();
-    storageLayoutBinding.binding = binding;
-    storageLayoutBinding.descriptorType = type;
-    storageLayoutBinding.descriptorCount = 1;
-    storageLayoutBinding.stageFlags = flags;
-    storageLayoutBinding.pImmutableSamplers = null;
+  let i = 0;
 
-    storageLayoutBindings[i] = storageLayoutBinding;
+  for (let i = 0; i < descriptors.length; i++) {
+    let { bindings, type } = descriptors[i];
+    if (bindings.length === 0) continue;
+
+    let layoutBindings = [];
+
+    for (let i2 = 0; i2 < bindings.length; i2++) {
+      let { binding } = bindings[i2];
+
+      let storageLayoutBinding = new VkDescriptorSetLayoutBinding();
+      storageLayoutBinding.binding = binding;
+      storageLayoutBinding.descriptorType = type;
+      storageLayoutBinding.descriptorCount = 1;
+      storageLayoutBinding.stageFlags = flags;
+      storageLayoutBinding.pImmutableSamplers = null;
+
+      layoutBindings[i2] = storageLayoutBinding;
+    }
+
+    let layoutInfo = new VkDescriptorSetLayoutCreateInfo();
+    layoutInfo.bindingCount = layoutBindings.length;
+    layoutInfo.pBindings = layoutBindings;
+
+    let descriptorSetLayout = new VkDescriptorSetLayout();
+    result = vkCreateDescriptorSetLayout(this.device, layoutInfo, null, descriptorSetLayout);
+    this.assertVulkan(result);
+
+    let descriptorPoolSize = new VkDescriptorPoolSize();
+    descriptorPoolSize.type = type;
+    descriptorPoolSize.descriptorCount = bindings.length;
+
+    descriptorSetLayouts.push(descriptorSetLayout);
+    descriptorPoolSizes.push(descriptorPoolSize);
+    descriptorTypes.push(type);
+    maxSets += bindings.length;
   }
 
-  let layoutInfo = new VkDescriptorSetLayoutCreateInfo();
-  layoutInfo.bindingCount = handles.length;
-  layoutInfo.pBindings = storageLayoutBindings;
-
-  let descriptorSetLayout = new VkDescriptorSetLayout();
-  let result = vkCreateDescriptorSetLayout(this.device, layoutInfo, null, descriptorSetLayout);
-  this.assertVulkan(result);
-
-  let descriptorPoolSize = new VkDescriptorPoolSize();
-  descriptorPoolSize.type = type;
-  descriptorPoolSize.descriptorCount = handles.length;
-
   let descriptorPoolInfo = new VkDescriptorPoolCreateInfo();
-  descriptorPoolInfo.maxSets = 1;
-  descriptorPoolInfo.poolSizeCount = 1;
-  descriptorPoolInfo.pPoolSizes = [descriptorPoolSize];
+  if (descriptorPoolSizes.length > 0) {
+    descriptorPoolInfo.maxSets = maxSets;
+    descriptorPoolInfo.poolSizeCount = descriptorPoolSizes.length;
+    descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
+  }
 
   let descriptorPool = new VkDescriptorPool();
   result = vkCreateDescriptorPool(this.device, descriptorPoolInfo, null, descriptorPool);
   this.assertVulkan(result);
 
-  // descriptorsets
   let descriptorSetAllocInfo = new VkDescriptorSetAllocateInfo();
-  descriptorSetAllocInfo.descriptorPool = descriptorPool;
-  descriptorSetAllocInfo.descriptorSetCount = 1;
-  descriptorSetAllocInfo.pSetLayouts = [descriptorSetLayout];
-
-  let descriptorSet = new VkDescriptorSet();
-  result = vkAllocateDescriptorSets(this.device, descriptorSetAllocInfo, [descriptorSet]);
-  this.assertVulkan(result);
-
-  let writeDescriptorSets = [];
-  for (let i = 0; i < handles.length; i++) {
-    let { binding, buffer } = handles[i];
-
-    let bufferInfo = new VkDescriptorBufferInfo();
-    bufferInfo.buffer = buffer.vksLocal.vkBuffer;
-    bufferInfo.offset = 0n;
-    bufferInfo.range = buffer.size;
-
-    let writeDescriptorSet = new VkWriteDescriptorSet();
-    writeDescriptorSet.dstSet = descriptorSet;
-    writeDescriptorSet.dstBinding = binding;
-    writeDescriptorSet.descriptorCount = 1;
-    writeDescriptorSet.descriptorType = type;
-    writeDescriptorSet.pBufferInfo = [bufferInfo];
-
-    writeDescriptorSets[i] = writeDescriptorSet;
+  if (descriptorSetLayouts.length > 0) {
+    descriptorSetAllocInfo.descriptorPool = descriptorPool;
+    descriptorSetAllocInfo.descriptorSetCount = descriptorSetLayouts.length;
+    descriptorSetAllocInfo.pSetLayouts = descriptorSetLayouts;
   }
 
-  vkUpdateDescriptorSets(this.device, handles.length, writeDescriptorSets, 0, null);
+  let descriptorSets = new InitializedArray(VkDescriptorSet, descriptorSetLayouts.length);
+  result = vkAllocateDescriptorSets(this.device, descriptorSetAllocInfo, descriptorSets);
+  this.assertVulkan(result);
 
+  for (let i = 0; i < descriptors.length; i++) {
+    let { bindings, type } = descriptors[i];
+    let writeDescriptorSets = [];
+
+    for (let i2 = 0; i2 < bindings.length; i2++) {
+      let { binding, buffer } = bindings[i2];
+
+      let bufferInfo = new VkDescriptorBufferInfo();
+      bufferInfo.buffer = buffer.vksLocal.vkBuffer;
+      bufferInfo.offset = 0n;
+      bufferInfo.range = buffer.size;
+
+      let writeDescriptorSet = new VkWriteDescriptorSet();
+      writeDescriptorSet.dstSet = descriptorSets[i];
+      writeDescriptorSet.dstBinding = binding;
+      writeDescriptorSet.descriptorCount = 1;
+      writeDescriptorSet.descriptorType = type;
+      writeDescriptorSet.pBufferInfo = [bufferInfo];
+
+      writeDescriptorSets[i2] = writeDescriptorSet;
+
+    }
+
+    vkUpdateDescriptorSets(this.device, bindings.length, writeDescriptorSets, 0, null);
+  }
+
+  let pipelineLayoutInfo = new VkPipelineLayoutCreateInfo();
+  if (descriptorSetLayouts.length > 0) {
+    pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.length;
+    pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts;
+  }
+
+  let pipelineLayout = new VkPipelineLayout();
+  result = vkCreatePipelineLayout(this.device, pipelineLayoutInfo, null, pipelineLayout);
+  this.assertVulkan(result);
 
   return {
+    vkPipelineLayout: pipelineLayout,
     vkPool: descriptorPool,
-    vkSetLayout: descriptorSetLayout,
-    vkSet: descriptorSet,
+    vkaSetLayouts: descriptorSetLayouts,
+    vkaSets: descriptorSets,
   }
 }
 
-export function createShaderInput(handles) {
+export function destroyPipelineLayout(object) {
+  for (let i = 0; i < object.vkaSetLayouts.length; i++) {
+    vkDestroyDescriptorSetLayout(this.device, object.vkaSetLayouts[i], null);
+  }
+  vkDestroyDescriptorPool(this.device, object.vkPool, null);
+  vkDestroyPipelineLayout(this.device, object.vkPipelineLayout, null);
+}
+
+export function createShaderInput(shaders) {
   let shaderStages = [];
-  let id = 0;
   
-  for (let i = 0; i < handles.length; i++) {
-    let handle = handles[i];
-    if (handle !== null && handle.id !== -1 && handle.stage !== -1) {
-      let vkStage = 0;
-      switch (handle.stage) {
-        case this.SHADER_STAGE_VERTEX: vkStage = VK_SHADER_STAGE_VERTEX_BIT; break;
-        case this.SHADER_STAGE_FRAGMENT: vkStage = VK_SHADER_STAGE_FRAGMENT_BIT; break;
-        default: continue;
-      }
+  for (let i = 0; i < shaders.length; i++) {
+    let shader = shaders[i];
+    let shaderStage = new VkPipelineShaderStageCreateInfo();
+    shaderStage.stage = shader.stage;
+    shaderStage.module = shader.vkShader;
+    shaderStage.pName = "main";
+    shaderStage.pSpecializationInfo = null;
 
-      let shaderStage = new VkPipelineShaderStageCreateInfo();
-      shaderStage.stage = vkStage;
-      shaderStage.module = handle.vkShader;
-      shaderStage.pName = "main";
-      shaderStage.pSpecializationInfo = null;
-
-      shaderStages[id] = shaderStage;
-      id += 1;
-    }
+    shaderStages[i] = shaderStage;
   }
   return shaderStages;
 }

@@ -4,7 +4,7 @@ import pngjs from "pngjs"; const { PNG } = pngjs;
 
 let snvk = new Vulkan();
 let width = 800;
-let height = 600;
+let height = 800;
 let workGroupSize = 32;
 let date = Date.now();
 
@@ -25,18 +25,30 @@ export function main() {
   }
   let compShader = snvk.createShader(compCreateInfo);
 
+  let uniformData = new Uint32Array([
+    width, height
+  ])
+  let uniformBufferCreateInfo = {
+    size: uniformData.byteLength,
+    usage: snvk.BUFFER_USAGE_UNIFORM,
+  }
   let storageBufferCreateInfo = {
     size: width * height * 4 * 4,
     usage: snvk.BUFFER_USAGE_STORAGE,
     readable: true,
   }
 
+  let uniformBuffer = snvk.createBuffer(uniformBufferCreateInfo);
+  let uniformBinding = snvk.getBinding(uniformBuffer, 1);
+  snvk.bufferSubData(uniformBuffer, 0, uniformData, 0, uniformData.byteLength);
+
   let storageBuffer = snvk.createBuffer(storageBufferCreateInfo);
   let stroageBinding = snvk.getBinding(storageBuffer, 0);
-  
+
   let computePipelineCreateInfo = {
     shader: compShader,
-    bindings: [stroageBinding],
+    uniformBindings: [uniformBinding],
+    storageBindings: [stroageBinding],
   }
   let computePipeline = snvk.createComputePipeline(computePipelineCreateInfo);
 
@@ -49,7 +61,7 @@ export function main() {
   snvk.cmdBegin(command);
 
   snvk.cmdBindComputePipeline(command, computePipeline);
-  snvk.cmdDispatch(command, width / workGroupSize, height / workGroupSize);
+  snvk.cmdDispatch(command, width, height, 1);
 
   snvk.cmdEnd(command);
 

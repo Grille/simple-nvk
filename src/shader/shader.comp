@@ -3,19 +3,19 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-#define WIDTH 800
-#define HEIGHT 600
-#define WORKGROUP_SIZE 32
-layout (local_size_x = WORKGROUP_SIZE, local_size_y = WORKGROUP_SIZE, local_size_z = 1 ) in;
-
 struct Pixel{
   vec4 value;
 };
 
-layout(std140, binding = 0) buffer buf
+layout(set=0,std140, binding = 0) buffer buf
 {
    Pixel imageData[];
 };
+
+layout(set=1,binding = 1) uniform ub {
+  uint width;
+  uint height;
+} UBO;
 
 void main() {
 
@@ -23,12 +23,16 @@ void main() {
   In order to fit the work into workgroups, some unnecessary threads are launched.
   We terminate those threads here. 
   */
-  if(gl_GlobalInvocationID.x >= WIDTH || gl_GlobalInvocationID.y >= HEIGHT)
+  //ubo.height = local_size_y;
+
+  if(gl_GlobalInvocationID.x >= UBO.width || gl_GlobalInvocationID.y >= UBO.height)
     return;
 
-  float x = float(gl_GlobalInvocationID.x) / float(WIDTH);
-  float y = float(gl_GlobalInvocationID.y) / float(HEIGHT);
+  float x = float(gl_GlobalInvocationID.x) / float(UBO.width);
+  float y = float(gl_GlobalInvocationID.y) / float(UBO.height);
 
+  //ubo.width = max(gl_GlobalInvocationID.x, ubo.width);
+  //ubo.height = max(gl_GlobalInvocationID.y, ubo.width);
   /*
   What follows is code for rendering the mandelbrot set. 
   */
@@ -54,5 +58,5 @@ void main() {
   vec4 color = vec4( d + e*cos( 6.28318*(f*t+g) ) ,1.0);
           
   // store the rendered mandelbrot set into a storage buffer:
-  imageData[WIDTH * gl_GlobalInvocationID.y + gl_GlobalInvocationID.x].value = color;
+  imageData[UBO.width * gl_GlobalInvocationID.y + gl_GlobalInvocationID.x].value = color;
 }

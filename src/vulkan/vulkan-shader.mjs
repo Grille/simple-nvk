@@ -19,6 +19,7 @@ export function createShader(createInfo) {
       case this.SHADER_STAGE_VERTEX: extension = "vert"; break;
       case this.SHADER_STAGE_FRAGMENT: extension = "frag"; break;
       case this.SHADER_STAGE_COMPUTE: extension = "comp"; break;
+      case this.SHADER_STAGE_GEOMETRY: extension = "geom"; break;
     }
     let spirvCode = GLSL.toSPIRVSync({
       source: source,

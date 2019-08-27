@@ -11,7 +11,8 @@ let title = "sNVK example";
 
 let buffers = null;
 let shaders = null;
-let bindings = null;
+let vertexBindings = null;
+let uniformBindings = null;
 let attributes = null;
 
 let frameAvailable = null;
@@ -29,6 +30,10 @@ let indexData = new Uint32Array([
   0, 1, 2,
   0, 3, 1,
 ])
+let uniformData = new Float32Array([
+  2
+])
+
 let posData = new Float32Array([
   -0.5, -0.5,
   0.5, 0.5,
@@ -90,6 +95,10 @@ function createInput() {
     size: indexData.byteLength,
     usage: snvk.BUFFER_USAGE_INDEX,
   }
+  let uniformBufferCreateInfo = {
+    size: uniformData.byteLength,
+    usage: snvk.BUFFER_USAGE_UNIFORM,
+  }
   let posBufferCreateInfo = {
     size: posData.byteLength,
     usage: snvk.BUFFER_USAGE_VERTEX,
@@ -101,6 +110,10 @@ function createInput() {
 
   let indexBuffer = snvk.createBuffer(indexBufferCreateInfo);
   snvk.bufferSubData(indexBuffer, 0, indexData, 0, indexData.byteLength);
+
+  let uniformBuffer = snvk.createBuffer(uniformBufferCreateInfo);
+  let uniformBinding = snvk.getBinding(uniformBuffer, 0);
+  snvk.bufferSubData(uniformBuffer, 0, uniformData, 0, uniformData.byteLength);
 
   let posBuffer = snvk.createBuffer(posBufferCreateInfo);
   let posBinding = snvk.getBinding(posBuffer, 0, 4 * 2);
@@ -114,7 +127,8 @@ function createInput() {
 
   buffers = [indexBuffer, posBuffer, colorBuffer];
   shaders = [vertShader, fragShader];
-  bindings = [posBinding, colorBinding];
+  vertexBindings = [posBinding, colorBinding];
+  uniformBindings = [uniformBinding]
   attributes = [posAttrib, colorAttrib];
 
 }
@@ -125,7 +139,8 @@ function createPipeline() {
     renderPass: renderPass,
     viewport: snvk.createViewport(),
     shaders: shaders,
-    bindings: bindings,
+    vertexBindings: vertexBindings,
+    uniformBindings: uniformBindings,
     attributes: attributes,
     backgroundColor: [0, 0, 0.5, 1],
   }

@@ -5,33 +5,31 @@ import { pushHandle, deleteHandle } from "./utils.mjs";
 export let computePipelineHandles = [];
 
 export function createComputePipeline(createInfo){
-  let { shader, entryPoint = "main", bindings = [] } = createInfo;
+  let { shader, entryPoint = "main", storageBindings = [], uniformBindings = [] } = createInfo;
 
-  let descriptors = this.getVkBindingDescriptors(bindings, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT);
-
-  let pipelineLayoutInfo = new VkPipelineLayoutCreateInfo();
-  pipelineLayoutInfo.setLayoutCount = 1;
-  pipelineLayoutInfo.pSetLayouts = [descriptors.vkSetLayout];
-
-  let pipelineLayout = new VkPipelineLayout();
-  let result = vkCreatePipelineLayout(this.device, pipelineLayoutInfo, null, pipelineLayout);
-  this.assertVulkan(result);
-
+  
+  let pipelineLayout = this.createPipelineLayout(
+    [
+      { bindings: storageBindings, type: VK_DESCRIPTOR_TYPE_STORAGE_BUFFER },
+      { bindings: uniformBindings, type: VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER },
+    ],
+    VK_SHADER_STAGE_COMPUTE_BIT
+  )
+  
   let computePipelineInfo = new VkComputePipelineCreateInfo();
   computePipelineInfo.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
   computePipelineInfo.stage.module = shader.vkShader;
   computePipelineInfo.stage.pName = entryPoint;
   computePipelineInfo.stage.pSpecializationInfo = null;
-  computePipelineInfo.layout = pipelineLayout;
+  computePipelineInfo.layout = pipelineLayout.vkPipelineLayout;
 
   let pipeline = new VkPipeline();
-  result = vkCreateComputePipelines(this.device, null, 1, [computePipelineInfo], null, [pipeline]);
+  let result = vkCreateComputePipelines(this.device, null, 1, [computePipelineInfo], null, [pipeline]);
   this.assertVulkan(result);
 
   let handle = {
-    vksStorageDescriptors:descriptors,
-    vkLayout: pipelineLayout,
     vkPipeline: pipeline,
+    layout: pipelineLayout,
   };
 
   pushHandle(this.computePipelineHandles, handle);
@@ -42,9 +40,7 @@ export function createComputePipeline(createInfo){
 
 export function destroyComputePipeline(handle) {
   if (handle.id === -1) return;
-  vkDestroyDescriptorSetLayout(this.device, handle.vksStorageDescriptors.vkSetLayout, null);
-  vkDestroyPipelineLayout(this.device, handle.vkLayout, null);
+  this.destroyPipelineLayout(handle.layout);
   vkDestroyPipeline(this.device, handle.vkPipeline, null);
-  vkDestroyDescriptorPool(this.device, handle.vksStorageDescriptors.vkPool, null);
   deleteHandle(this.computePipelineHandles, handle);
 }

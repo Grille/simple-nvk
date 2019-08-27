@@ -64,6 +64,10 @@ export function cmdBeginRender(commandBuffer, pipeline, frambuffer, backColor) {
 
   vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vkPipeline);
 
+  if (pipeline.layout.vkaSets.length > 0) {
+    vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout.vkPipelineLayout, 0, pipeline.layout.vkaSets.length, pipeline.layout.vkaSets, 0, null);
+  }
+
   let vertexBindings = pipeline.vertexBindings;
   let offsets = new BigUint64Array(vertexBindings.length);
   let vertexBuffers = [];
@@ -129,7 +133,9 @@ export function cmdBindComputePipeline(commandBuffer, pipeline) {
   let { vkCommandBuffer } = commandBuffer;
 
   vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.vkPipeline);
-  vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.vkLayout, 0, 1, [pipeline.vksStorageDescriptors.vkSet], 0, null);
+  if (pipeline.layout.vkaSets.length > 0) {
+    vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout.vkPipelineLayout, 0, pipeline.layout.vkaSets.length, pipeline.layout.vkaSets, 0, null);
+  }
 }
 
 export function cmdDispatch(commandBuffer, x = 1, y = 1, z = 1) {

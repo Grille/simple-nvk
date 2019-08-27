@@ -15,10 +15,7 @@ export let framebuffers = [];
 export let commandPool = null;
 export let commandBuffers = [];
 export let queue = null;
-export let semaphores = {
-  imageAviable: null,
-  renderingDone: null,
-}
+
 export let shaderSrcCache = {};
 export let vulkanReady = false;
 export let pipelineInputChanged = false;
@@ -50,10 +47,4 @@ export function startVulkan() {
   this.commandPool = new VkCommandPool();
   result = vkCreateCommandPool(this.device, commandPoolCreateInfo, null, this.commandPool);
   this.assertVulkan(result);
-
-  let semaphoreCreateInfo = new VkSemaphoreCreateInfo();
-  this.semaphores.imageAviable = new VkSemaphore();
-  this.semaphores.renderingDone = new VkSemaphore();
-  vkCreateSemaphore(this.device, semaphoreCreateInfo, null, this.semaphores.imageAviable);
-  vkCreateSemaphore(this.device, semaphoreCreateInfo, null, this.semaphores.renderingDone);
 }
