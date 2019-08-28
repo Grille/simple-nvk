@@ -2,7 +2,7 @@
   "name": "nvk-mandelbrot",
   "version": "0.0.1",
   "scripts": {
-    "start": "node --experimental-modules ./src/program.mjs"
+    "start": "node --experimental-modules ./example/program.mjs"
   },
   "dependencies": {
     "pngjs": "^3.3.3",

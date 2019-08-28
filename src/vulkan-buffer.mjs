@@ -182,6 +182,12 @@ export function getBinding(buffer, binding = 0, stride = 1) {
     stride,
   }
 }
+export function getDescriptor(binding, type) {
+  return {
+    binding,
+    type,
+  }
+}
 export function findVkFormat(size, vec, type) {
   let enumName = `VK_FORMAT_`
   size*=8;

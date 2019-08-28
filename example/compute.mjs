@@ -1,4 +1,4 @@
-import Vulkan from "./vulkan/vulkan.mjs";
+import Vulkan from "../src/vulkan.mjs";
 import fs from "fs";
 import pngjs from "pngjs"; const { PNG } = pngjs;
 
@@ -17,7 +17,7 @@ export function main() {
   snvk.closeWindow();
 
   time("  vk setup...")
-  let compSrc = snvk.loadShaderSrc(`./src/shader/shader.comp`);
+  let compSrc = snvk.loadShaderSrc(`./example/compute.comp`);
   let compCreateInfo = {
     source: compSrc,
     format: snvk.SHADER_SRC_GLSL,

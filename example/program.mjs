@@ -1,4 +1,4 @@
-import Vulkan from "./vulkan/vulkan.mjs";
+import Vulkan from "../src/vulkan.mjs";
 import fs from "fs";
 import pngjs from "pngjs"; const { PNG } = pngjs;
 

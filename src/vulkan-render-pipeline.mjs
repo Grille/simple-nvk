@@ -92,7 +92,7 @@ export function createRenderPipeline(createInfo) {
   let bufferInputInfo = this.createBufferInput(vertexBindings, attributes);
   let pipelineLayout = this.createPipelineLayout(
     [
-      //{ bindings: storageBindings, type: VK_DESCRIPTOR_TYPE_STORAGE_BUFFER },
+      { bindings: storageBindings, type: VK_DESCRIPTOR_TYPE_STORAGE_BUFFER },
       { bindings: uniformBindings, type: VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER },
     ],
     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT

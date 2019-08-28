@@ -1,7 +1,7 @@
 import fs from "fs"
 import nvk from "nvk"
 import { pushHandle, deleteHandle } from "./utils.mjs";
-import { GLSL } from "nvk-essentials"
+import essentials from "nvk-essentials"; const {GLSL} = essentials;
 
 export let shaderChanged = false;
 export let shaderHandles = [];

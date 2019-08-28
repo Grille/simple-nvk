@@ -1,4 +1,4 @@
-import Vulkan from "./vulkan/vulkan.mjs";
+import Vulkan from "../src/vulkan.mjs";
 import fs from "fs";
 
 let lastResize = 0;
@@ -74,8 +74,8 @@ export function main(){
 }
 
 function createInput() {
-  let vertSrc = snvk.loadShaderSrc(`./src/shader/shader.vert`);
-  let fragSrc = snvk.loadShaderSrc(`./src/shader/shader.frag`);
+  let vertSrc = snvk.loadShaderSrc(`./example/render.vert`);
+  let fragSrc = snvk.loadShaderSrc(`./example/render.frag`);
 
   let vertCreateInfo = {
     source: vertSrc,
