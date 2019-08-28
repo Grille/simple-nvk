@@ -42,6 +42,10 @@ export function waitForFence(handle,timeout){
   vkWaitForFences(this.device, 1, [handle.vkFence], true, timeout * 1E6);
 }
 
+export function resetFence(handle){
+  vkResetFences(this.device, 1, [handle.vkFence]);
+}
+
 export function destroyFence(handle) {
   if (handle.id === -1) return;
   vkDestroyFence(this.device, handle.vkFence, null);

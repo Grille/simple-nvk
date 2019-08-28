@@ -99,7 +99,7 @@ export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null)
 
   vkUnmapMemory(this.device, handle.vksHost.vkMemory);
 
-  this.copyVkBuffer(handle.vksHost.vkBuffer, handle.vksLocal.vkBuffer, offsetHost, offsetDst, length);
+  this.copyVkBuffer(handle.vksHost.vkBuffer, offsetHost, handle.vksLocal.vkBuffer, offsetDst, length);
 
   if (handle.staging === this.BUFFER_STAGING_DYNAMIC) {
     this.destroyVkBuffer(handle.vksHost);
@@ -115,7 +115,7 @@ export function bufferReadData(handle, offset = 0, length = null) {
     offsetHost = 0;
   }
 
-  this.copyVkBuffer(handle.vksLocal.vkBuffer, handle.vksHost.vkBuffer, offset, offsetHost, length);
+  this.copyVkBuffer(handle.vksLocal.vkBuffer, offset, handle.vksHost.vkBuffer, offsetHost, length);
 
   let result = vkMapMemory(this.device, handle.vksHost.vkMemory, offsetHost, length, 0, dataPtr);
   this.assertVulkan(result);
@@ -128,10 +128,10 @@ export function bufferReadData(handle, offset = 0, length = null) {
 
   return buffer;
 }
-export function copyBuffer(srcHandle, dstHandle, offsetSrc,offsetDst, size) {
-  this.copyVkBuffer(srcHandle.vksLocal.vkBuffer, dstHandle.vksLocal.vkBuffer, offsetSrc, offsetDst, size);
+export function copyBuffer(srcHandle, offsetSrc, dstHandle, offsetDst, size) {
+  this.copyVkBuffer(srcHandle.vksLocal.vkBuffer, offsetSrc, dstHandle.vksLocal.vkBuffer, offsetDst, size);
 }
-export function copyVkBuffer(src, dst, offsetSrc, offsetDst, size) {
+export function copyVkBuffer(src, offsetSrc, dst, offsetDst, size) {
 
   let commandCreateInfo = {
     level: this.COMMAND_LEVEL_PRIMARY,
