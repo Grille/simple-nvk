@@ -11,8 +11,8 @@ let title = "sNVK example";
 
 let buffers = null;
 let shaders = null;
-let vertexBindings = null;
-let uniformBindings = null;
+let bindings = null;
+let descriptors = null;
 let attributes = null;
 
 let frameAvailable = null;
@@ -112,7 +112,7 @@ function createInput() {
   snvk.bufferSubData(indexBuffer, 0, indexData, 0, indexData.byteLength);
 
   let uniformBuffer = snvk.createBuffer(uniformBufferCreateInfo);
-  let uniformBinding = snvk.getBinding(uniformBuffer, 0);
+  let uniformDescriptor = snvk.getDescriptor(uniformBuffer, 0, snvk.DESCRIPTOR_TYPE_UNIFORM);
   snvk.bufferSubData(uniformBuffer, 0, uniformData, 0, uniformData.byteLength);
 
   let posBuffer = snvk.createBuffer(posBufferCreateInfo);
@@ -127,9 +127,9 @@ function createInput() {
 
   buffers = [indexBuffer, posBuffer, colorBuffer];
   shaders = [vertShader, fragShader];
-  vertexBindings = [posBinding, colorBinding];
-  uniformBindings = [uniformBinding]
+  bindings = [posBinding, colorBinding];
   attributes = [posAttrib, colorAttrib];
+  descriptors = [uniformDescriptor];
 
 }
 function createPipeline() {
@@ -139,8 +139,8 @@ function createPipeline() {
     renderPass: renderPass,
     viewport: snvk.createViewport(),
     shaders: shaders,
-    vertexBindings: vertexBindings,
-    uniformBindings: uniformBindings,
+    bindings: bindings,
+    descriptors: descriptors,
     attributes: attributes,
     backgroundColor: [0, 0, 0.5, 1],
   }

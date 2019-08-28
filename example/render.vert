@@ -10,7 +10,6 @@ layout(location = 1) in vec4 color;
 
 layout(binding = 0) uniform ub {
   float size;
-  //mat4 mvp;
 } UBO;
 
 layout(location = 0) out vec4 vertexColor;

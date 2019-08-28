@@ -39,16 +39,15 @@ export function main() {
   }
 
   let uniformBuffer = snvk.createBuffer(uniformBufferCreateInfo);
-  let uniformBinding = snvk.getBinding(uniformBuffer, 1);
+  let uniformDescriptor = snvk.getDescriptor(uniformBuffer, 1, snvk.DESCRIPTOR_TYPE_UNIFORM);
   snvk.bufferSubData(uniformBuffer, 0, uniformData, 0, uniformData.byteLength);
 
   let storageBuffer = snvk.createBuffer(storageBufferCreateInfo);
-  let stroageBinding = snvk.getBinding(storageBuffer, 0);
+  let storageDescriptor = snvk.getDescriptor(storageBuffer, 0, snvk.DESCRIPTOR_TYPE_STORAGE);
 
   let computePipelineCreateInfo = {
     shader: compShader,
-    uniformBindings: [uniformBinding],
-    storageBindings: [stroageBinding],
+    descriptors: [uniformDescriptor, storageDescriptor],
   }
   let computePipeline = snvk.createComputePipeline(computePipelineCreateInfo);
 

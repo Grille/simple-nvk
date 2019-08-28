@@ -7,12 +7,12 @@ struct Pixel{
   vec4 value;
 };
 
-layout(set=0,std140, binding = 0) buffer buf
+layout(std140, binding = 0) buffer buf
 {
    Pixel imageData[];
 };
 
-layout(set=1,binding = 1) uniform ub {
+layout(binding = 1) uniform ub {
   uint width;
   uint height;
 } UBO;

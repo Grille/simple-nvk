@@ -72,7 +72,7 @@ export function destroyRenderPass(handle) {
 export function createRenderPipeline(createInfo) {
   let result;
   let {
-    renderPass, shaders, vertexBindings = [], storageBindings = [], uniformBindings = [], attributes, 
+    renderPass, shaders = [], bindings = [], descriptors = [], attributes = [], 
     backgroundColor = [0, 0, 0, 1], 
     rasterizationInfo = {}, blendingInfo = {}, assemblyInfo = {},
     viewport = null, basePipeline = null 
@@ -89,14 +89,8 @@ export function createRenderPipeline(createInfo) {
   } = blendingInfo;
 
   let shaderInputInfo = this.createShaderInput(shaders);
-  let bufferInputInfo = this.createBufferInput(vertexBindings, attributes);
-  let pipelineLayout = this.createPipelineLayout(
-    [
-      { bindings: storageBindings, type: VK_DESCRIPTOR_TYPE_STORAGE_BUFFER },
-      { bindings: uniformBindings, type: VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER },
-    ],
-    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
-  )
+  let bufferInputInfo = this.createBufferInput(bindings, attributes);
+  let pipelineLayout = this.createPipelineLayout(descriptors, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 
   let assemblyCreateInfo = new VkPipelineInputAssemblyStateCreateInfo();
   assemblyCreateInfo.topology = topology;
@@ -168,7 +162,7 @@ export function createRenderPipeline(createInfo) {
     layout: pipelineLayout,
     vkRenderPass: renderPass.vkRenderPass,
     vkPipeline: pipeline,
-    vertexBindings: vertexBindings,
+    vertexBindings: bindings,
     backgroundColor: backgroundColor,
   }
   pushHandle(this.renderPipelineHandles, handle);

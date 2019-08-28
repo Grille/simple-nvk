@@ -182,8 +182,9 @@ export function getBinding(buffer, binding = 0, stride = 1) {
     stride,
   }
 }
-export function getDescriptor(binding, type) {
+export function getDescriptor(buffer, binding, type) {
   return {
+    buffer,
     binding,
     type,
   }
