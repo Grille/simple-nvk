@@ -6,8 +6,6 @@
     "start": "node --experimental-modules ./example/program.mjs"
   },
   "dependencies": {
-    "pngjs": "^3.3.3",
-    "gl-matrix": "^2.8.1",
     "nvk": "latest",
     "nvk-essentials": "latest"
   },

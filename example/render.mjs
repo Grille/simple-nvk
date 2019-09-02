@@ -1,6 +1,6 @@
 import Vulkan from "../src/vulkan.mjs";
 import fs from "fs";
-import glm from "gl-matrix";
+//import glm from "gl-matrix";
 
 let lastResize = 0;
 let fpsDate = Date.now();
