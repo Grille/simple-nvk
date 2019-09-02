@@ -1,0 +1,6 @@
+.vs
+.vscode
+test.png
+node_modules
+package-lock.json
+example

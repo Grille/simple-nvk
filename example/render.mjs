@@ -1,5 +1,6 @@
 import Vulkan from "../src/vulkan.mjs";
 import fs from "fs";
+import glm from "gl-matrix";
 
 let lastResize = 0;
 let fpsDate = Date.now();
@@ -9,6 +10,7 @@ let snvk = null;
 let window = null;
 let title = "sNVK example";
 
+let indexBuffer = null;
 let buffers = null;
 let shaders = null;
 let bindings = null;
@@ -26,19 +28,18 @@ let commandbuffers = null;
 
 let ready = false;
 
+let uniformData = new Uint8Array(64)
+let uniformView = new DataView(uniformData.buffer);
+
 let indexData = new Uint32Array([
   0, 1, 2,
   0, 3, 1,
 ])
-let uniformData = new Float32Array([
-  2
-])
-
 let posData = new Float32Array([
-  -0.5, -0.5,
-  0.5, 0.5,
-  -0.5, 0.5,
-  0.5, -0.5,
+  -1, -1,
+  1, 1,
+  -1, 1,
+  1, -1,
 ])
 let colorData = new Float32Array([
   1, 0, 0, 1,
@@ -50,7 +51,7 @@ let colorData = new Float32Array([
 
 export function main(){
   snvk = new Vulkan();
-  snvk.startWindow({ width: 480, height: 320, title });
+  snvk.startWindow({ width: 600, height: 600, title });
   window = snvk.window;
 
   console.log("start...");
@@ -125,7 +126,7 @@ function createInput() {
   let colorAttrib = snvk.getAttribute(colorBinding, 1, snvk.TYPE_FLOAT32, 4);
   snvk.bufferSubData(colorBuffer, 0, colorData, 0, colorData.byteLength);
 
-  buffers = [indexBuffer, posBuffer, colorBuffer];
+  buffers = {indexBuffer, uniformBuffer};
   shaders = [vertShader, fragShader];
   bindings = [posBinding, colorBinding];
   attributes = [posAttrib, colorAttrib];
@@ -135,7 +136,11 @@ function createInput() {
 function createPipeline() {
   renderPass = snvk.createRenderPass();
 
+  let rasterizationInfo = {
+    polygonMode: VK_POLYGON_MODE_FILL,
+  }
   let renderPipelineCreateInfo = {
+    rasterizationInfo: rasterizationInfo,
     renderPass: renderPass,
     viewport: snvk.createViewport(),
     shaders: shaders,
@@ -172,7 +177,7 @@ function createPipeline() {
     snvk.cmdBegin(command);
 
     snvk.cmdBeginRender(command, renderPipeline, framebuffer);
-    snvk.cmdBindIndexBuffer(command, buffers[0]);
+    snvk.cmdBindIndexBuffer(command, buffers.indexBuffer);
     snvk.cmdDrawIndexed(command, 0, indexData.length);
 
     snvk.cmdEndRender(command);
@@ -196,6 +201,8 @@ function destroyPipline() {
 }
 
 function drawFrame() {
+  snvk.bufferSubData(buffers.uniformBuffer, 0, uniformData, 0, uniformData.byteLength);
+
   let index = snvk.getNextSwapchainIndex(swapchain, frameAvailable);
   let command = commandbuffers[index];
   let submitInfo = {
