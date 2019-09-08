@@ -1,6 +1,6 @@
 import Vulkan from "../src/vulkan.mjs";
 import fs from "fs";
-//import pngjs from "pngjs"; const { PNG } = pngjs;
+import pngjs from "pngjs"; const { PNG } = pngjs;
 
 let snvk = new Vulkan();
 let width = 800;
@@ -75,7 +75,7 @@ export function main() {
   let view = new Float32Array(snvk.bufferReadData(storageBuffer));
 
   time("  png pack...")
-  /*
+  
   let png = new PNG({
     width: width,
     height: height,
@@ -87,9 +87,9 @@ export function main() {
     png.data[ii + 2] = 255 * view[ii + 2];
     png.data[ii + 3] = 255 * view[ii + 3];
   };
-  */
+  
   time("  png save...")
-  //png.pack().pipe(fs.createWriteStream("test.png"));
+  png.pack().pipe(fs.createWriteStream("test.png"));
 
   time("  vk shutdown...")
   snvk.shutdownVulkan();

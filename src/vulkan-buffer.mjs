@@ -44,42 +44,6 @@ export function createVkHostBuffer(size, bufferUsageFlags) {
   );
 }
 
-export function createVkBuffer(bufferSize,bufferUsageFlags,memoryPropertieFlags){
-  let bufferInfo = new VkBufferCreateInfo();
-  bufferInfo.size = bufferSize;
-  bufferInfo.usage = bufferUsageFlags;
-  bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-  bufferInfo.queueFamilyIndexCount = 0;
-  bufferInfo.pQueueFamilyIndices = null;
-
-  let buffer = new VkBuffer();
-  let result = vkCreateBuffer(this.device, bufferInfo, null, buffer);
-  this.assertVulkan(result);
-  
-  let memoryRequirements = new VkMemoryRequirements()
-  vkGetBufferMemoryRequirements(this.device, buffer, memoryRequirements);
-  
-  let memoryAllocateInfo = new VkMemoryAllocateInfo();
-  memoryAllocateInfo.allocationSize = memoryRequirements.size;
-  memoryAllocateInfo.memoryTypeIndex = this.findMemoryTypeIndex(
-    memoryRequirements.memoryTypeBits, memoryPropertieFlags
-  );
-
-  let memory = new VkDeviceMemory();
-  result = vkAllocateMemory(this.device, memoryAllocateInfo, null, memory);
-  this.assertVulkan(result);
-
-  vkBindBufferMemory(this.device, buffer, memory, 0n);
-
-  return {
-    vkBuffer: buffer,
-    vkMemory: memory,
-  }
-}
-export function destroyVkBuffer(buffer) {
-  vkFreeMemory(this.device, buffer.vkMemory);
-  vkDestroyBuffer(this.device, buffer.vkBuffer, null);
-}
 export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null) {
   let dataPtr = { $: 0n };
   if (length === null) length = data.buffer.size;
@@ -166,6 +130,15 @@ export function destroyBuffer(handle) {
   this.destroyVkBuffer(handle.vksLocal);
   deleteHandle(this.bufferHandles, handle);
 }
+
+export function getBinding(buffer, binding = 0, stride = 1) {
+  return {
+    buffer,
+    binding,
+    stride,
+  }
+}
+
 export function getAttribute(binding, location, type, size, offset = 0) {
   let format = this.findVkFormat(type >> 4, size, type & 15);
   return {
@@ -175,13 +148,7 @@ export function getAttribute(binding, location, type, size, offset = 0) {
     offset,
   }
 }
-export function getBinding(buffer, binding = 0, stride = 1) {
-  return {
-    buffer,
-    binding,
-    stride,
-  }
-}
+
 export function getDescriptor(buffer, binding, type) {
   return {
     buffer,
@@ -189,6 +156,45 @@ export function getDescriptor(buffer, binding, type) {
     type,
   }
 }
+
+export function createVkBuffer(bufferSize,bufferUsageFlags,memoryPropertieFlags){
+  let bufferInfo = new VkBufferCreateInfo();
+  bufferInfo.size = bufferSize;
+  bufferInfo.usage = bufferUsageFlags;
+  bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  bufferInfo.queueFamilyIndexCount = 0;
+  bufferInfo.pQueueFamilyIndices = null;
+
+  let buffer = new VkBuffer();
+  let result = vkCreateBuffer(this.device, bufferInfo, null, buffer);
+  this.assertVulkan(result);
+  
+  let memoryRequirements = new VkMemoryRequirements()
+  vkGetBufferMemoryRequirements(this.device, buffer, memoryRequirements);
+  
+  let memoryAllocateInfo = new VkMemoryAllocateInfo();
+  memoryAllocateInfo.allocationSize = memoryRequirements.size;
+  memoryAllocateInfo.memoryTypeIndex = this.findMemoryTypeIndex(
+    memoryRequirements.memoryTypeBits, memoryPropertieFlags
+  );
+
+  let memory = new VkDeviceMemory();
+  result = vkAllocateMemory(this.device, memoryAllocateInfo, null, memory);
+  this.assertVulkan(result);
+
+  vkBindBufferMemory(this.device, buffer, memory, 0n);
+
+  return {
+    vkBuffer: buffer,
+    vkMemory: memory,
+  }
+}
+
+export function destroyVkBuffer(buffer) {
+  vkFreeMemory(this.device, buffer.vkMemory);
+  vkDestroyBuffer(this.device, buffer.vkBuffer, null);
+}
+
 export function findVkFormat(size, vec, type) {
   let enumName = `VK_FORMAT_`
   size*=8;
@@ -205,6 +211,7 @@ export function findVkFormat(size, vec, type) {
   }
   return nvk[enumName];
 }
+
 export function getVkBufferUsageBits(usage, readable) {
   let host = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
   let local = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -215,6 +222,7 @@ export function getVkBufferUsageBits(usage, readable) {
   local |= usage;
   return { host, local };
 }
+
 export function findMemoryTypeIndex(typeFilter, properties) {
   let memoryProperties = new VkPhysicalDeviceMemoryProperties();
   vkGetPhysicalDeviceMemoryProperties(this.physicalDevice, memoryProperties);

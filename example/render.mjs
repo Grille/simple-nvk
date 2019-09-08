@@ -1,6 +1,6 @@
 import Vulkan from "../src/vulkan.mjs";
 import fs from "fs";
-//import glm from "gl-matrix";
+import glm from "gl-matrix";
 
 let lastResize = 0;
 let fpsDate = Date.now();
@@ -47,7 +47,6 @@ let colorData = new Float32Array([
   0, 0, 1, 1,
   1, 1, 0, 1,
 ])
-
 
 export function main(){
   snvk = new Vulkan();
@@ -133,6 +132,7 @@ function createInput() {
   descriptors = [uniformDescriptor];
 
 }
+
 function createPipeline() {
   renderPass = snvk.createRenderPass();
 

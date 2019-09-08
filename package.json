@@ -9,6 +9,17 @@
     "nvk": "latest",
     "nvk-essentials": "latest"
   },
+  "devDependencies": {
+    "pngjs": "^3.3.3",
+    "gl-matrix": "^2.8.1"
+  },
+  "keywords": [
+    "nvk",
+    "vulkan",
+    "gpgpu",
+    "compute",
+    "graphics"
+  ],
   "author": "paul hirch",
   "license": "MIT"
 }
