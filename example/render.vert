@@ -5,19 +5,20 @@ out gl_PerVertex {
   vec4 gl_Position;
 };
 
-layout(location = 0) in vec2 pos;
+layout(location = 0) in vec3 pos;
 layout(location = 1) in vec4 color;
 
 layout(binding = 0) uniform ub {
-  //float scale;
-  mat4 MVP;
+  mat4 model;
+  mat4 view;
+  mat4 projection;
 };
 
 layout(location = 0) out vec4 vertexColor;
 
 void main(){
-  //mat4 mv = mat4(1);
-  gl_Position = vec4(pos/10, 0.0, 1.0);
+  vec4 vertexPosition = projection * view * model * vec4(pos, 1.0);
 
   vertexColor = color;
+  gl_Position = vertexPosition;
 }

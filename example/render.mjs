@@ -10,7 +10,6 @@ let snvk = null;
 let window = null;
 let title = "sNVK example";
 
-let indexBuffer = null;
 let buffers = null;
 let shaders = null;
 let bindings = null;
@@ -28,24 +27,35 @@ let commandbuffers = null;
 
 let ready = false;
 
-let uniformData = new Uint8Array(64)
-let uniformView = new DataView(uniformData.buffer);
-
+let uniformData = new Uint8Array(16 * 4 * 3)
 let indexData = new Uint32Array([
   0, 1, 2,
   0, 3, 1,
+
+  4, 5, 6,
+  4, 7, 5,
 ])
 let posData = new Float32Array([
-  -1, -1,
-  1, 1,
-  -1, 1,
-  1, -1,
+  -0.5, -0.5, 0,
+  +0.5, +0.5, 0,
+  -0.5, +0.5, 0,
+  +0.5, -0.5, 0,
+
+  -0.5, -0.5, 0.5,
+  +0.5, +0.5, 0.5,
+  -0.5, +0.5, 0.5,
+  +0.5, -0.5, 0.5,
 ])
 let colorData = new Float32Array([
+  0.5, 0, 0, 1,
   1, 0, 0, 1,
+  1, 0.5, 0.5, 1,
+  0.3, 0, 0, 1,
+
+  0, 0.5, 0, 1,
   0, 1, 0, 1,
-  0, 0, 1, 1,
-  1, 1, 0, 1,
+  0.5, 1, 0.5, 1,
+  0, 0.3, 0, 1,
 ])
 
 export function main(){
@@ -116,8 +126,8 @@ function createInput() {
   snvk.bufferSubData(uniformBuffer, 0, uniformData, 0, uniformData.byteLength);
 
   let posBuffer = snvk.createBuffer(posBufferCreateInfo);
-  let posBinding = snvk.getBinding(posBuffer, 0, 4 * 2);
-  let posAttrib = snvk.getAttribute(posBinding, 0, snvk.TYPE_FLOAT32, 2);
+  let posBinding = snvk.getBinding(posBuffer, 0, 4 * 3);
+  let posAttrib = snvk.getAttribute(posBinding, 0, snvk.TYPE_FLOAT32, 3);
   snvk.bufferSubData(posBuffer, 0, posData, 0, posData.byteLength);
 
   let colorBuffer = snvk.createBuffer(colorBufferCreateInfo);
@@ -137,7 +147,8 @@ function createPipeline() {
   renderPass = snvk.createRenderPass();
 
   let rasterizationInfo = {
-    polygonMode: VK_POLYGON_MODE_FILL,
+    polygonMode: snvk.POLYGON_MODE_FILL,
+    cullMode: snvk.CULL_MODE_NONE,
   }
   let renderPipelineCreateInfo = {
     rasterizationInfo: rasterizationInfo,
@@ -200,7 +211,34 @@ function destroyPipline() {
   snvk.destroyRenderPass(renderPass);
 }
 
+let lol = 0;
 function drawFrame() {
+  let { mat4, vec3 } = glm;
+  
+  let model = mat4.create();
+  let view = mat4.create();
+  let projection = mat4.create();
+  
+  mat4.rotateZ(model,model,lol+=0.01);
+  mat4.lookAt(
+    view,
+    vec3.fromValues(2.0, 1.0, -1.0),
+    vec3.fromValues(0.0, 0.0, 0.25),
+    vec3.fromValues(0.0, 0.0, 1.0)
+  );
+  
+  mat4.perspective(
+    projection,
+    60.0 * Math.PI / 180,
+    window.width / window.height,
+    0.1,
+    16.0
+  );
+
+  uniformData.set(new Uint8Array(model.buffer), 0);
+  uniformData.set(new Uint8Array(view.buffer), 16 * 4);
+  uniformData.set(new Uint8Array(projection.buffer), 32 * 4);
+
   snvk.bufferSubData(buffers.uniformBuffer, 0, uniformData, 0, uniformData.byteLength);
 
   let index = snvk.getNextSwapchainIndex(swapchain, frameAvailable);
