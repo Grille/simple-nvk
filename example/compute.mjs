@@ -57,12 +57,12 @@ export function main() {
   }
   let command = snvk.createCommandBuffer(commandCreateInfo);
 
-  snvk.cmdBegin(command);
+  command.begin();
 
-  snvk.cmdBindComputePipeline(command, computePipeline);
-  snvk.cmdDispatch(command, width, height, 1);
+  command.bindComputePipeline(computePipeline);
+  command.dispatch(width, height, 1);
 
-  snvk.cmdEnd(command);
+  command.end();
 
   time("  vk execute...")
   let submitInfo = {

@@ -144,9 +144,10 @@ function copyVkBuffer(snvk, src, offsetSrc, dst, offsetDst, size) {
     level: snvk.COMMAND_LEVEL_PRIMARY,
     usage: snvk.COMMAND_USAGE_ONE_TIME,
   }
-  let commandBuffer = snvk.createCommandBuffer(commandCreateInfo);
-  snvk.cmdBegin(commandBuffer);
-  let { vkCommandBuffer } = commandBuffer;
+  let command = snvk.createCommandBuffer(commandCreateInfo);
+
+  command.begin();
+  let { vkCommandBuffer } = command;
 
   let bufferCopy = new VkBufferCopy();
   bufferCopy.srcOffset = offsetSrc;
@@ -154,15 +155,15 @@ function copyVkBuffer(snvk, src, offsetSrc, dst, offsetDst, size) {
   bufferCopy.size = size;
   vkCmdCopyBuffer(vkCommandBuffer, src, dst, 1, [bufferCopy]);
 
-  snvk.cmdEnd(commandBuffer);
+  command.end();
 
   let submitInfo = {
-    commandBuffer: commandBuffer,
+    commandBuffer: command,
     blocking: true,
   }
   snvk.submit(submitInfo);
 
-  snvk.destroyCommandBuffer(commandBuffer);
+  snvk.destroyCommandBuffer(command);
 }
 
 function createVkBuffer(snvk, bufferSize, bufferUsageFlags, memoryPropertieFlags) {

@@ -1,28 +1,11 @@
 import nvk from "nvk"
-import { pushHandle, deleteHandle, InitializedArray } from "./utils.mjs"
+import { pushHandle, deleteHandle, InitializedArray, assertVulkan } from "./utils.mjs"
 
 export let commandBufferHandles = [];
 
 export function createCommandBuffer(createInfo) {
-  let { level, usage } = createInfo;
-
-  let commandBufferAllocateInfo = new VkCommandBufferAllocateInfo();
-  commandBufferAllocateInfo.commandPool = this.commandPool;
-  commandBufferAllocateInfo.level = level;
-  commandBufferAllocateInfo.commandBufferCount = 1;
-
-  let commandBuffer = new VkCommandBuffer();
-  let result = vkAllocateCommandBuffers(this.device, commandBufferAllocateInfo, [commandBuffer]);
-  this.assertVulkan(result);
-
-  let handle = {
-    vkCommandBuffer: commandBuffer,
-    level: level,
-    usage: usage,
-  }
-
+  let handle = new CommandBufferHandle(this, createInfo);
   pushHandle(this.commandBufferHandles, handle);
-
   return handle;
 }
 
@@ -32,111 +15,130 @@ export function destroyCommandBuffer(handle) {
   deleteHandle(this.commandBufferHandles, handle);
 }
 
-export function cmdBegin(commandBuffer) {
-  let { vkCommandBuffer } = commandBuffer;
+class CommandBufferHandle {
+  constructor(snvk, { level, usage }) {
+    this.snvk = snvk;
+    this.device = snvk.device;
 
-  let commandBufferBeginInfo = new VkCommandBufferBeginInfo();
-  commandBufferBeginInfo.flags = commandBuffer.usage;
-  commandBufferBeginInfo.pInheritanceInfo = null;
+    let commandBufferAllocateInfo = new VkCommandBufferAllocateInfo();
+    commandBufferAllocateInfo.commandPool = snvk.commandPool;
+    commandBufferAllocateInfo.level = level;
+    commandBufferAllocateInfo.commandBufferCount = 1;
 
-  let result = vkBeginCommandBuffer(vkCommandBuffer, commandBufferBeginInfo);
-  this.assertVulkan(result);
-}
+    let vkCommandBuffer = new VkCommandBuffer();
+    let result = vkAllocateCommandBuffers(snvk.device, commandBufferAllocateInfo, [vkCommandBuffer]);
+    assertVulkan(result);
 
-export function cmdBindRenderPipeline(commandBuffer, pipeline){
-  let { vkCommandBuffer } = commandBuffer;
+    this.vkCommandBuffer = vkCommandBuffer;
+    this.level = level;
+    this.usage = usage;
+  }
+  begin() {
+    let { vkCommandBuffer } = this;
 
-  vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vkPipeline);
+    let commandBufferBeginInfo = new VkCommandBufferBeginInfo();
+    commandBufferBeginInfo.flags = this.usage;
+    commandBufferBeginInfo.pInheritanceInfo = null;
 
-  if (pipeline.layout.enabled) 
-    vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout.vkPipelineLayout, 0, 1, [pipeline.layout.vkSet], 0, null);
-
-  let vertexBindings = pipeline.vertexBindings;
-  let offsets = new BigUint64Array(vertexBindings.length);
-  let vertexBuffers = [];
-
-  for (let i = 0; i < vertexBindings.length; i++) {
-    vertexBuffers[i] = vertexBindings[i].buffer.vksLocal.vkBuffer;
+    let result = vkBeginCommandBuffer(vkCommandBuffer, commandBufferBeginInfo);
+    assertVulkan(result);
   }
 
-  vkCmdBindVertexBuffers(vkCommandBuffer, 0, vertexBuffers.length, vertexBuffers, offsets);
-}
+  bindRenderPipeline(pipeline) {
+    let { vkCommandBuffer } = this;
 
-export function cmdBeginRender(commandBuffer, renderPass, frambuffer, backColor) {
-  let { vkCommandBuffer } = commandBuffer;
+    vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vkPipeline);
 
-  let renderPassBeginInfo = new VkRenderPassBeginInfo();
-  renderPassBeginInfo.renderPass = renderPass.vkRenderPass;
-  renderPassBeginInfo.framebuffer = frambuffer.vkFramebuffer;
-  renderPassBeginInfo.renderArea.offset.x = 0;
-  renderPassBeginInfo.renderArea.offset.y = 0;
-  renderPassBeginInfo.renderArea.extent.width = frambuffer.width;
-  renderPassBeginInfo.renderArea.extent.height = frambuffer.height;
-  renderPassBeginInfo.clearValueCount = 1;
-  renderPassBeginInfo.pClearValues = [new VkClearValue({
-    color: new VkClearColorValue({
-      float32: renderPass.backgroundColor,
-    }),
-    depthStencil: null,
-  })];
+    if (pipeline.layout.enabled)
+      vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout.vkPipelineLayout, 0, 1, [pipeline.layout.vkSet], 0, null);
 
-  vkCmdBeginRenderPass(vkCommandBuffer, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-}
+    let vertexBindings = pipeline.vertexBindings;
+    let offsets = new BigUint64Array(vertexBindings.length);
+    let vertexBuffers = [];
 
-export function cmdBindIndexBuffer(commandBuffer, indexBuffer) {
-  let { vkCommandBuffer } = commandBuffer;
+    for (let i = 0; i < vertexBindings.length; i++) {
+      vertexBuffers[i] = vertexBindings[i].buffer.vksLocal.vkBuffer;
+    }
 
-  vkCmdBindIndexBuffer(vkCommandBuffer, indexBuffer.vksLocal.vkBuffer, 0, VK_INDEX_TYPE_UINT32);
-}
+    vkCmdBindVertexBuffers(vkCommandBuffer, 0, vertexBuffers.length, vertexBuffers, offsets);
+  }
 
-export function cmdDrawArrays(commandBuffer, offset, length) {
-  let { vkCommandBuffer } = commandBuffer;
+  beginRender(renderPass, frambuffer, backColor) {
+    let { vkCommandBuffer } = this;
 
-  vkCmdDraw(vkCommandBuffer, length, 1, offset, 0);
-}
+    let renderPassBeginInfo = new VkRenderPassBeginInfo();
+    renderPassBeginInfo.renderPass = renderPass.vkRenderPass;
+    renderPassBeginInfo.framebuffer = frambuffer.vkFramebuffer;
+    renderPassBeginInfo.renderArea.offset.x = 0;
+    renderPassBeginInfo.renderArea.offset.y = 0;
+    renderPassBeginInfo.renderArea.extent.width = frambuffer.width;
+    renderPassBeginInfo.renderArea.extent.height = frambuffer.height;
+    renderPassBeginInfo.clearValueCount = 1;
+    renderPassBeginInfo.pClearValues = [new VkClearValue({
+      color: new VkClearColorValue({
+        float32: renderPass.backgroundColor,
+      }),
+      depthStencil: null,
+    })];
 
-export function cmdDrawIndexed(commandBuffer, offset, length) {
-  let { vkCommandBuffer } = commandBuffer;
+    vkCmdBeginRenderPass(vkCommandBuffer, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+  }
 
-  vkCmdDrawIndexed(vkCommandBuffer, length, 1, offset, 0, 0);
-}
+  bindIndexBuffer(indexBuffer) {
+    let { vkCommandBuffer } = this;
 
-export function cmdEndRender(commandBuffer) {
-  let { vkCommandBuffer } = commandBuffer;
+    vkCmdBindIndexBuffer(vkCommandBuffer, indexBuffer.vksLocal.vkBuffer, 0, VK_INDEX_TYPE_UINT32);
+  }
 
-  vkCmdEndRenderPass(vkCommandBuffer);
-}
-export function cmdEnd(commandBuffer) {
-  let { vkCommandBuffer } = commandBuffer;
+  drawArrays(offset, length) {
+    let { vkCommandBuffer } = this;
 
-  let result = vkEndCommandBuffer(vkCommandBuffer);
-  this.assertVulkan(result);
-}
+    vkCmdDraw(vkCommandBuffer, length, 1, offset, 0);
+  }
 
-export function cmdBindComputePipeline(commandBuffer, pipeline) {
-  let { vkCommandBuffer } = commandBuffer;
+  drawIndexed(offset, length) {
+    let { vkCommandBuffer } = this;
 
-  vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.vkPipeline);
+    vkCmdDrawIndexed(vkCommandBuffer, length, 1, offset, 0, 0);
+  }
 
-  if (pipeline.layout.enabled) 
-    vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout.vkPipelineLayout, 0, 1, [pipeline.layout.vkSet], 0, null);
-}
+  endRender() {
+    let { vkCommandBuffer } = this;
 
-export function cmdDispatch(commandBuffer, x = 1, y = 1, z = 1) {
-  let { vkCommandBuffer } = commandBuffer;
+    vkCmdEndRenderPass(vkCommandBuffer);
+  }
+  end() {
+    let { vkCommandBuffer } = this;
 
-  vkCmdDispatch(vkCommandBuffer, x | 0, y | 0, z | 0);
-}
+    let result = vkEndCommandBuffer(vkCommandBuffer);
+    assertVulkan(result);
+  }
 
-export function cmdCopyBuffer(commandBuffer, src, srcOffset, dst, dstOffset, length) {
-  let { vkCommandBuffer } = commandBuffer;
+  bindComputePipeline(pipeline) {
+    let { vkCommandBuffer } = this;
 
-  let bufferCopy = new VkBufferCopy();
-  bufferCopy.srcOffset = srcOffset;
-  bufferCopy.dstOffset = dstOffset;
-  bufferCopy.size = length;
+    vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.vkPipeline);
 
-  vkCmdCopyBuffer(vkCommandBuffer, src.vksLocal.vkBuffer, dst.vksLocal.vkBuffer, 1, [bufferCopy]);
+    if (pipeline.layout.enabled)
+      vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout.vkPipelineLayout, 0, 1, [pipeline.layout.vkSet], 0, null);
+  }
+
+  dispatch(x = 1, y = 1, z = 1) {
+    let { vkCommandBuffer } = this;
+
+    vkCmdDispatch(vkCommandBuffer, x | 0, y | 0, z | 0);
+  }
+
+  copyBuffer(src, srcOffset, dst, dstOffset, length) {
+    let { vkCommandBuffer } = this;
+
+    let bufferCopy = new VkBufferCopy();
+    bufferCopy.srcOffset = srcOffset;
+    bufferCopy.dstOffset = dstOffset;
+    bufferCopy.size = length;
+
+    vkCmdCopyBuffer(vkCommandBuffer, src.vksLocal.vkBuffer, dst.vksLocal.vkBuffer, 1, [bufferCopy]);
+  }
 }
 
 export function submit(submitInfo) {
@@ -160,14 +162,14 @@ export function submit(submitInfo) {
     let fence = this.createFence();
   
     let result = vkQueueSubmit(this.queue, 1, [vkSubmitInfo], fence.vkFence);
-    this.assertVulkan(result);
+    assertVulkan(result);
   
     this.waitForFence(fence, 60 * 1E3);
     this.destroyFence(fence);
   }
   else {
     let result = vkQueueSubmit(this.queue, 1, [vkSubmitInfo], vkFence);
-    this.assertVulkan(result);
+    assertVulkan(result);
   }
 
 }
