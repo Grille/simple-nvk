@@ -1,5 +1,5 @@
 import nvk from "nvk"
-import { pushHandle, deleteHandle,InitializedArray } from "./utils.mjs"
+import { pushHandle, deleteHandle, InitializedArray, assertVulkan } from "./utils.mjs"
 
 export function createInstance() {
   let validationLayers = ["VK_LAYER_LUNARG_standard_validation", "VK_LAYER_LUNARG_parameter_validation"];
@@ -21,7 +21,7 @@ export function createInstance() {
 
   this.instance = new VkInstance();
   let result = vkCreateInstance(instanceInfo, null, this.instance)
-  this.assertVulkan(result);
+  assertVulkan(result);
 }
 
 export let surfaceHandles = [];
@@ -123,7 +123,7 @@ export function getLogicalDevice(physicalDevice, queueFamily) {
 
   let device = new VkDevice();
   let result = vkCreateDevice(physicalDevice, deviceCreateInfo, null, device);
-  this.assertVulkan(result);
+  assertVulkan(result);
 
   return device;
 }

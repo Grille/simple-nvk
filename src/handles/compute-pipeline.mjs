@@ -1,6 +1,5 @@
 import nvk from "nvk"
 import { pushHandle, deleteHandle, assertVulkan } from "../utils.mjs"
-import { createPipelineLayout, destroyPipelineLayout } from "../vulkan-pipeline.mjs"
 import Handle from "./handle.mjs";
 
 export let computePipelineHandles = [];
@@ -21,7 +20,7 @@ export class ComputePipelineHandle extends Handle {
   constructor(snvk, { shader, entryPoint = "main", descriptors = [] }) {
     super(snvk);
 
-    let pipelineLayout = createPipelineLayout(snvk, descriptors, VK_SHADER_STAGE_COMPUTE_BIT);
+    let pipelineLayout = snvk.createPipelineLayout({ descriptors, flags: (VK_SHADER_STAGE_COMPUTE_BIT) });
 
     let computePipelineInfo = new VkComputePipelineCreateInfo();
     computePipelineInfo.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -38,7 +37,7 @@ export class ComputePipelineHandle extends Handle {
     this.layout = pipelineLayout;
   }
   destroy() {
-    destroyPipelineLayout(this.snvk, this.layout);
+    this.snvk.destroyPipelineLayout(this.layout);
     vkDestroyPipeline(this.device, this.vkPipeline, null);
   }
 }

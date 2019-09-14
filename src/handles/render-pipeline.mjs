@@ -1,6 +1,5 @@
 import nvk from "nvk"
 import { pushHandle, deleteHandle, assertVulkan } from "../utils.mjs"
-import { createShaderInput, createBufferInput, createPipelineLayout, destroyPipelineLayout } from "../vulkan-pipeline.mjs"
 import Handle from "./handle.mjs";
 
 export let renderPipelineHandles = [];
@@ -49,7 +48,7 @@ export class RenderPipelineHandle extends Handle {
 
     let shaderInputInfo = createShaderInput(snvk, shaders);
     let bufferInputInfo = createBufferInput(snvk, bindings, attributes);
-    let pipelineLayout = createPipelineLayout(snvk, descriptors, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+    let pipelineLayout = snvk.createPipelineLayout({ descriptors, flags: (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT) });
 
     let assemblyCreateInfo = new VkPipelineInputAssemblyStateCreateInfo();
     assemblyCreateInfo.topology = topology;
@@ -124,7 +123,63 @@ export class RenderPipelineHandle extends Handle {
     this.backgroundColor = backgroundColor;
   }
   destroy(){
-    destroyPipelineLayout(this.snvk, this.layout);
+    this.snvk.destroyPipelineLayout(this.layout);
     vkDestroyPipeline(this.device, this.vkPipeline, null);
   }
+}
+
+function createShaderInput(snvk, shaders) {
+  let shaderStages = [];
+  
+  for (let i = 0; i < shaders.length; i++) {
+    let shader = shaders[i];
+    let shaderStage = new VkPipelineShaderStageCreateInfo();
+    shaderStage.stage = shader.stage;
+    shaderStage.module = shader.vkShader;
+    shaderStage.pName = "main";
+    shaderStage.pSpecializationInfo = null;
+
+    shaderStages[i] = shaderStage;
+  }
+  return shaderStages;
+}
+
+function createBufferInput(snvk, bindings,attributes) {
+  let vertexBindings = [], vertexAttributes = [];
+  let id = 0;
+  
+  for (let i = 0; i < bindings.length; i++) {
+    let binding = bindings[i];
+
+    let vertexBinding = new VkVertexInputBindingDescription();
+    vertexBinding.binding = binding.binding;
+    vertexBinding.stride = binding.stride;
+    vertexBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    vertexBindings[i] = vertexBinding;
+  }
+
+  for (let i = 0; i < attributes.length; i++) {
+    let attribute = attributes[i];
+
+    let vertexAttribute = new VkVertexInputAttributeDescription();
+    vertexAttribute.location = attribute.location;
+    vertexAttribute.binding = attribute.binding.binding;
+    vertexAttribute.format = attribute.format;
+    vertexAttribute.offset = attribute.offset;
+
+    vertexAttributes[i] = vertexAttribute;
+  }
+
+  let vertex = new VkPipelineVertexInputStateCreateInfo({});
+  if (vertexBindings.length > 0) {
+    vertex.vertexBindingDescriptionCount = vertexBindings.length;
+    vertex.pVertexBindingDescriptions = vertexBindings;
+  }
+  if (vertexAttributes.length > 0) {
+    vertex.vertexAttributeDescriptionCount = vertexAttributes.length;
+    vertex.pVertexAttributeDescriptions = vertexAttributes;
+  }
+
+  return vertex;
 }

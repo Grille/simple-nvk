@@ -110,7 +110,7 @@ export class BufferHandle extends Handle {
   }
 
   getAttribute(binding, location, type, size, offset = 0) {
-    let format = findVkFormat(this.snvk, type >> 4, size, type & 15);
+    let format = getVkFormat(this.snvk, type >> 4, size, type & 15);
     return {
       binding,
       location,
@@ -201,7 +201,7 @@ function destroyVkBuffer(snvk, buffer) {
   vkDestroyBuffer(snvk.device, buffer.vkBuffer, null);
 }
 
-function findVkFormat(snvk, size, vec, type) {
+function getVkFormat(snvk, size, vec, type) {
   let enumName = `VK_FORMAT_`
   size *= 8;
   switch (vec) {

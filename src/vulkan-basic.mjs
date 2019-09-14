@@ -1,5 +1,5 @@
 import nvk from "nvk"
-import { pushHandle, deleteHandle, InitializedArray } from "./utils.mjs"
+import { pushHandle, deleteHandle, InitializedArray, assertVulkan } from "./utils.mjs"
 
 export let instance = null;
 export let physicalDevice = null;
@@ -46,5 +46,29 @@ export function startVulkan() {
 
   this.commandPool = new VkCommandPool();
   result = vkCreateCommandPool(this.device, commandPoolCreateInfo, null, this.commandPool);
-  this.assertVulkan(result);
+  assertVulkan(result);
+}
+
+export function createViewport(snvk) {
+  let viewport = new VkViewport();
+  viewport.x = 0;
+  viewport.y = 0;
+  viewport.width = snvk.window.width;
+  viewport.height = snvk.window.height;
+  viewport.minDepth = 0;
+  viewport.maxDepth = 1;
+
+  let scissor = new VkRect2D();
+  scissor.offset.x = 0;
+  scissor.offset.y = 0;
+  scissor.extent.width = snvk.window.width;
+  scissor.extent.height = snvk.window.height;
+
+  let viewportCreateInfo = new VkPipelineViewportStateCreateInfo();
+  viewportCreateInfo.viewportCount = 1;
+  viewportCreateInfo.pViewports = [viewport];
+  viewportCreateInfo.scissorCount = 1;
+  viewportCreateInfo.pScissors = [scissor];
+
+  return viewportCreateInfo;
 }
