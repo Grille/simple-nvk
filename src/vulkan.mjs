@@ -1,7 +1,7 @@
 import * as assert from "./vulkan-assert.mjs";
 import * as basic from "./vulkan-basic.mjs";
-import * as buffer from "./vulkan-buffer.mjs";
-import * as command from "./vulkan-command.mjs";
+import * as buffer from "./handles/buffer.mjs";
+import * as command from "./handles/command.mjs";
 import * as computePipeline from "./vulkan-compute-pipeline.mjs";
 import * as destroy from "./vulkan-destroy.mjs";
 import * as enums from "./vulkan-enum.mjs";

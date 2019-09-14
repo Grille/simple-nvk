@@ -1,34 +1,19 @@
 import nvk from "nvk"
-import { pushHandle, deleteHandle, assertVulkan } from "./utils.mjs";
+import Handle from "./handle.mjs";
+import { pushHandle, deleteHandle, assertVulkan } from "../utils.mjs";
 
-export let bufferChanged = false;
 export let bufferHandles = [];
-export let indexBufferHandle = null;
 
 export function createBuffer(createInfo) {
-
-  let bufferHandle = new BufferHandle(this, createInfo)
-
-  pushHandle(this.bufferHandles, bufferHandle);
-
-  return bufferHandle;
+  return new BufferHandle(this, createInfo)
 }
-
 export function destroyBuffer(handle) {
-  if (handle.id === -1) return;
-  if (handle.staging === this.BUFFER_STAGING_STATIC) {
-    destroyVkBuffer(this, handle.vksHost);
-  }
-
-  destroyVkBuffer(this, handle.vksLocal);
-  deleteHandle(this.bufferHandles, handle);
+  handle.destroy();
 }
 
-class BufferHandle {
+class BufferHandle extends Handle {
   constructor(snvk, { size, usage, staging = snvk.BUFFER_STAGING_DYNAMIC, readable = false }) {
-    this.snvk = snvk;
-    this.device = snvk.device;
-    this.physicalDevice = snvk.physicalDevice;
+    super(snvk);
 
     let vkUsageBits = getVkBufferUsageBits(this.snvk, usage, readable);
 
@@ -50,6 +35,18 @@ class BufferHandle {
     this.usage = usage;
     this.size = size;
     this.readable = readable;
+
+    pushHandle(snvk.bufferHandles, this);
+  }
+
+  destroy() {
+    let { snvk } = this;
+    if (this.id === -1) return;
+    if (this.staging === snvk.BUFFER_STAGING_STATIC) {
+      destroyVkBuffer(snvk, this.vksHost);
+    }
+    destroyVkBuffer(snvk, this.vksLocal);
+    deleteHandle(snvk.bufferHandles, this);
   }
 
   subData(offsetDst, data, offsetSrc, length = null) {

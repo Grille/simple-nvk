@@ -1,24 +1,20 @@
 import nvk from "nvk"
-import { pushHandle, deleteHandle, InitializedArray, assertVulkan } from "./utils.mjs"
+import Handle from "./handle.mjs";
+import { pushHandle, deleteHandle, InitializedArray, assertVulkan } from "../utils.mjs"
 
 export let commandBufferHandles = [];
 
 export function createCommandBuffer(createInfo) {
-  let handle = new CommandBufferHandle(this, createInfo);
-  pushHandle(this.commandBufferHandles, handle);
-  return handle;
+  return new CommandBufferHandle(this, createInfo);
 }
 
 export function destroyCommandBuffer(handle) {
-  if (handle.id === -1) return;
-  vkFreeCommandBuffers(this.device, this.commandPool, 1, [handle.vkCommandBuffer]);
-  deleteHandle(this.commandBufferHandles, handle);
+  handle.destroy();
 }
 
-class CommandBufferHandle {
+class CommandBufferHandle extends Handle {
   constructor(snvk, { level, usage }) {
-    this.snvk = snvk;
-    this.device = snvk.device;
+    super(snvk);
 
     let commandBufferAllocateInfo = new VkCommandBufferAllocateInfo();
     commandBufferAllocateInfo.commandPool = snvk.commandPool;
@@ -32,7 +28,17 @@ class CommandBufferHandle {
     this.vkCommandBuffer = vkCommandBuffer;
     this.level = level;
     this.usage = usage;
+
+    pushHandle(snvk.commandBufferHandles, this);
   }
+
+  destroy() {
+    let { snvk } = this;
+    if (this.id === -1) return;
+    vkFreeCommandBuffers(snvk.device, snvk.commandPool, 1, [this.vkCommandBuffer]);
+    deleteHandle(snvk.commandBufferHandles, this);
+  }
+
   begin() {
     let { vkCommandBuffer } = this;
 
