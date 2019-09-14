@@ -1,8 +1,8 @@
-import { pushHandle, deleteHandle, InitializedArray } from "./utils.mjs"
+import { pushHandle, deleteHandle, InitializedArray, assertVulkan } from "./utils.mjs"
 
 export let pipelineLayoutHandles = [];
 
-export function createPipelineLayout(descriptors, flags) {
+export function createPipelineLayout(snvk,descriptors, flags) {
   let result = 0;
 
   let descriptorSetLayout = null;
@@ -35,8 +35,8 @@ export function createPipelineLayout(descriptors, flags) {
     layoutInfo.pBindings = layoutBindings;
 
     descriptorSetLayout = new VkDescriptorSetLayout();
-    result = vkCreateDescriptorSetLayout(this.device, layoutInfo, null, descriptorSetLayout);
-    this.assertVulkan(result);
+    result = vkCreateDescriptorSetLayout(snvk.device, layoutInfo, null, descriptorSetLayout);
+    assertVulkan(result);
 
     for (let type = 0; type < typeCounter.length; type++) {
       let count = typeCounter[type];
@@ -55,8 +55,8 @@ export function createPipelineLayout(descriptors, flags) {
     descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
 
     descriptorPool = new VkDescriptorPool();
-    result = vkCreateDescriptorPool(this.device, descriptorPoolInfo, null, descriptorPool);
-    this.assertVulkan(result);
+    result = vkCreateDescriptorPool(snvk.device, descriptorPoolInfo, null, descriptorPool);
+    assertVulkan(result);
 
     let descriptorSetAllocInfo = new VkDescriptorSetAllocateInfo();
     descriptorSetAllocInfo.descriptorPool = descriptorPool;
@@ -64,8 +64,8 @@ export function createPipelineLayout(descriptors, flags) {
     descriptorSetAllocInfo.pSetLayouts = [descriptorSetLayout];
 
     descriptorSet = new VkDescriptorSet();
-    result = vkAllocateDescriptorSets(this.device, descriptorSetAllocInfo, [descriptorSet]);
-    this.assertVulkan(result);
+    result = vkAllocateDescriptorSets(snvk.device, descriptorSetAllocInfo, [descriptorSet]);
+    assertVulkan(result);
 
     let writeDescriptorSets = [];
 
@@ -86,7 +86,7 @@ export function createPipelineLayout(descriptors, flags) {
 
       writeDescriptorSets[i] = writeDescriptorSet;
     }
-    vkUpdateDescriptorSets(this.device, descriptors.length, writeDescriptorSets, 0, null);
+    vkUpdateDescriptorSets(snvk.device, descriptors.length, writeDescriptorSets, 0, null);
   }
 
   let pipelineLayoutInfo = new VkPipelineLayoutCreateInfo();
@@ -96,8 +96,8 @@ export function createPipelineLayout(descriptors, flags) {
   }
 
   let pipelineLayout = new VkPipelineLayout();
-  result = vkCreatePipelineLayout(this.device, pipelineLayoutInfo, null, pipelineLayout);
-  this.assertVulkan(result);
+  result = vkCreatePipelineLayout(snvk.device, pipelineLayoutInfo, null, pipelineLayout);
+  assertVulkan(result);
 
   let handle = {
     vkPipelineLayout: pipelineLayout,
@@ -107,20 +107,20 @@ export function createPipelineLayout(descriptors, flags) {
     enabled: enabled,
   }
 
-  pushHandle(this.pipelineLayoutHandles, handle);
+  pushHandle(snvk.pipelineLayoutHandles, handle);
 
   return handle;
 }
 
-export function destroyPipelineLayout(handle) {
+export function destroyPipelineLayout(snvk, handle) {
   if (handle.id === -1) return;
-  vkDestroyDescriptorSetLayout(this.device, handle.vkSetLayout, null);
-  vkDestroyDescriptorPool(this.device, handle.vkPool, null);
-  vkDestroyPipelineLayout(this.device, handle.vkPipelineLayout, null);
-  deleteHandle(this.pipelineLayoutHandles, handle);
+  vkDestroyDescriptorSetLayout(snvk.device, handle.vkSetLayout, null);
+  vkDestroyDescriptorPool(snvk.device, handle.vkPool, null);
+  vkDestroyPipelineLayout(snvk.device, handle.vkPipelineLayout, null);
+  deleteHandle(snvk.pipelineLayoutHandles, handle);
 }
 
-export function createShaderInput(shaders) {
+export function createShaderInput(snvk, shaders) {
   let shaderStages = [];
   
   for (let i = 0; i < shaders.length; i++) {
@@ -135,7 +135,7 @@ export function createShaderInput(shaders) {
   }
   return shaderStages;
 }
-export function createBufferInput(bindings,attributes) {
+export function createBufferInput(snvk, bindings,attributes) {
   let vertexBindings = [], vertexAttributes = [];
   let id = 0;
   
@@ -175,20 +175,20 @@ export function createBufferInput(bindings,attributes) {
   return vertex;
 }
 
-export function createViewport() {
+export function createViewport(snvk) {
   let viewport = new VkViewport();
   viewport.x = 0;
   viewport.y = 0;
-  viewport.width = this.window.width;
-  viewport.height = this.window.height;
+  viewport.width = snvk.window.width;
+  viewport.height = snvk.window.height;
   viewport.minDepth = 0;
   viewport.maxDepth = 1;
 
   let scissor = new VkRect2D();
   scissor.offset.x = 0;
   scissor.offset.y = 0;
-  scissor.extent.width = this.window.width;
-  scissor.extent.height = this.window.height;
+  scissor.extent.width = snvk.window.width;
+  scissor.extent.height = snvk.window.height;
 
   let viewportCreateInfo = new VkPipelineViewportStateCreateInfo();
   viewportCreateInfo.viewportCount = 1;

@@ -84,8 +84,8 @@ export function main(){
 }
 
 function createInput() {
-  let vertSrc = snvk.loadShaderSrc(`./example/render.vert`);
-  let fragSrc = snvk.loadShaderSrc(`./example/render.frag`);
+  let vertSrc = fs.readFileSync(`./example/render.vert`);
+  let fragSrc = fs.readFileSync(`./example/render.frag`);
 
   let vertCreateInfo = {
     source: vertSrc,
@@ -119,21 +119,21 @@ function createInput() {
   }
 
   let indexBuffer = snvk.createBuffer(indexBufferCreateInfo);
-  snvk.bufferSubData(indexBuffer, 0, indexData, 0, indexData.byteLength);
+  indexBuffer.subData(0, indexData, 0, indexData.byteLength);
 
   let uniformBuffer = snvk.createBuffer(uniformBufferCreateInfo);
-  let uniformDescriptor = snvk.getDescriptor(uniformBuffer, 0, snvk.DESCRIPTOR_TYPE_UNIFORM);
-  snvk.bufferSubData(uniformBuffer, 0, uniformData, 0, uniformData.byteLength);
+  let uniformDescriptor = uniformBuffer.getDescriptor(uniformBuffer, 0, snvk.DESCRIPTOR_TYPE_UNIFORM);
+  uniformBuffer.subData(0, uniformData, 0, uniformData.byteLength);
 
   let posBuffer = snvk.createBuffer(posBufferCreateInfo);
-  let posBinding = snvk.getBinding(posBuffer, 0, 4 * 3);
-  let posAttrib = snvk.getAttribute(posBinding, 0, snvk.TYPE_FLOAT32, 3);
-  snvk.bufferSubData(posBuffer, 0, posData, 0, posData.byteLength);
+  let posBinding = posBuffer.getBinding(posBuffer, 0, 4 * 3);
+  let posAttrib = posBuffer.getAttribute(posBinding, 0, snvk.TYPE_FLOAT32, 3);
+  posBuffer.subData(0, posData, 0, posData.byteLength);
 
   let colorBuffer = snvk.createBuffer(colorBufferCreateInfo);
-  let colorBinding = snvk.getBinding(colorBuffer, 1, 4 * 4);
-  let colorAttrib = snvk.getAttribute(colorBinding, 1, snvk.TYPE_FLOAT32, 4);
-  snvk.bufferSubData(colorBuffer, 0, colorData, 0, colorData.byteLength);
+  let colorBinding = colorBuffer.getBinding(colorBuffer, 1, 4 * 4);
+  let colorAttrib = colorBuffer.getAttribute(colorBinding, 1, snvk.TYPE_FLOAT32, 4);
+  colorBuffer.subData(0, colorData, 0, colorData.byteLength);
 
   buffers = {indexBuffer, uniformBuffer};
   shaders = [vertShader, fragShader];
@@ -155,7 +155,7 @@ function createPipeline() {
   let renderPipelineCreateInfo = {
     rasterizationInfo: rasterizationInfo,
     renderPass: renderPass,
-    viewport: snvk.createViewport(),
+    viewport: snvk.createViewport(snvk),
     shaders: shaders,
     descriptors: descriptors,
     attributes: attributes,
@@ -185,18 +185,18 @@ function createPipeline() {
     }
     let command = snvk.createCommandBuffer(commandCreateInfo);
 
-    snvk.cmdBegin(command);
+    command.begin();
 
-    snvk.cmdBindRenderPipeline(command, renderPipeline);
-    snvk.cmdBindIndexBuffer(command, buffers.indexBuffer);
+    command.bindRenderPipeline(renderPipeline);
+    command.bindIndexBuffer(buffers.indexBuffer);
     
-    snvk.cmdBeginRender(command, renderPass, framebuffer);
+    command.beginRender(renderPass, framebuffer);
 
-    snvk.cmdDrawIndexed(command, 0, indexData.length);
+    command.drawIndexed(0, indexData.length);
 
-    snvk.cmdEndRender(command);
+    command.endRender();
 
-    snvk.cmdEnd(command);
+    command.end();
 
     commandbuffers[i] = command;
   }
@@ -207,7 +207,6 @@ function destroyPipline() {
   ready = false;
 
   snvk.waitForIdle();
-
   snvk.destroySwapchain(swapchain);
   snvk.destroySurface(surface);
   snvk.destroyRenderPipeline(renderPipeline);
@@ -242,7 +241,7 @@ function drawFrame() {
   uniformData.set(new Uint8Array(view.buffer), 16 * 4);
   uniformData.set(new Uint8Array(projection.buffer), 32 * 4);
 
-  snvk.bufferSubData(buffers.uniformBuffer, 0, uniformData, 0, uniformData.byteLength);
+  buffers.uniformBuffer.subData(0, uniformData, 0, uniformData.byteLength);
 
   let index = snvk.getNextSwapchainIndex(swapchain, frameAvailable);
   let command = commandbuffers[index];
