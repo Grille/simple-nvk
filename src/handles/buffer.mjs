@@ -11,7 +11,7 @@ export function destroyBuffer(handle) {
   handle.destroy();
 }
 
-class BufferHandle extends Handle {
+export class BufferHandle extends Handle {
   constructor(snvk, { size, usage, staging = snvk.BUFFER_STAGING_DYNAMIC, readable = false }) {
     super(snvk);
 

@@ -12,7 +12,7 @@ export function destroyCommandBuffer(handle) {
   handle.destroy();
 }
 
-class CommandBufferHandle extends Handle {
+export class CommandBufferHandle extends Handle {
   constructor(snvk, { level, usage }) {
     super(snvk);
 

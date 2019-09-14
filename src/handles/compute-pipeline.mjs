@@ -17,7 +17,7 @@ export function destroyComputePipeline(handle) {
   deleteHandle(this.computePipelineHandles, handle);
 }
 
-class ComputePipelineHandle extends Handle {
+export class ComputePipelineHandle extends Handle {
   constructor(snvk, { shader, entryPoint = "main", descriptors = [] }) {
     super(snvk);
 

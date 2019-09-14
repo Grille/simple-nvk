@@ -18,7 +18,7 @@ export function destroyShader(handle) {
   deleteHandle(this.shaderHandles, handle);
 }
 
-class ShaderHandle extends Handle {
+export class ShaderHandle extends Handle {
   constructor(snvk, { source, format, stage }) {
     super(snvk);
     let byteCode = null

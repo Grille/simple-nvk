@@ -243,7 +243,7 @@ function drawFrame() {
 
   buffers.uniformBuffer.subData(0, uniformData, 0, uniformData.byteLength);
 
-  let index = snvk.getNextSwapchainIndex(swapchain, frameAvailable);
+  let index = swapchain.getNextIndex(frameAvailable);
   let command = commandbuffers[index];
   let submitInfo = {
     waitSemaphore: frameAvailable,
@@ -251,7 +251,7 @@ function drawFrame() {
     commandBuffer: command,
   }
   snvk.submit(submitInfo);
-  snvk.present(swapchain, renderAvailable);
+  swapchain.present(renderAvailable);
 }
 
 function eventLoop() {
