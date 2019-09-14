@@ -37,3 +37,4 @@ export function destroyComputePipeline(handle) {
   vkDestroyPipeline(this.device, handle.vkPipeline, null);
   deleteHandle(this.computePipelineHandles, handle);
 }
+

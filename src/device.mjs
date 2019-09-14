@@ -1,4 +1,4 @@
-export default class Handle{
+export default class DeviceHandle{
   constructor(snvk){
     this.id=-1;
     this.snvk = snvk;

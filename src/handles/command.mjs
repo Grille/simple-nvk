@@ -169,8 +169,7 @@ export function submit(submitInfo) {
   
     let result = vkQueueSubmit(this.queue, 1, [vkSubmitInfo], fence.vkFence);
     assertVulkan(result);
-  
-    this.waitForFence(fence, 60 * 1E3);
+    fence.wait(60 * 1E3);
     this.destroyFence(fence);
   }
   else {

@@ -17,7 +17,7 @@ export function main() {
   snvk.closeWindow();
 
   time("  vk setup...")
-  let compSrc = snvk.loadShaderSrc(`./example/compute.comp`);
+  let compSrc = fs.readFileSync(`./example/compute.comp`);
   let compCreateInfo = {
     source: compSrc,
     format: snvk.SHADER_SRC_GLSL,

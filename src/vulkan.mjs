@@ -10,9 +10,9 @@ import * as image from "./vulkan-image.mjs";
 import * as pipeline from "./vulkan-pipeline.mjs";
 import * as renderPipeline from "./vulkan-render-pipeline.mjs";
 import * as setup from "./vulkan-setup.mjs";
-import * as shader from "./vulkan-shader.mjs";
+import * as shader from "./handles/shader.mjs";
 import * as swapchain from "./vulkan-swapchain.mjs";
-import * as synchronization from "./vulkan-synchronization.mjs";
+import * as synchronization from "./handles/synchronization.mjs";
 
 import nvk from "nvk"
 Object.assign(global, nvk);
