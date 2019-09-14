@@ -39,11 +39,11 @@ export function main() {
   }
 
   let uniformBuffer = snvk.createBuffer(uniformBufferCreateInfo);
-  let uniformDescriptor = snvk.getDescriptor(uniformBuffer, 1, snvk.DESCRIPTOR_TYPE_UNIFORM);
-  snvk.bufferSubData(uniformBuffer, 0, uniformData, 0, uniformData.byteLength);
+  let uniformDescriptor = uniformBuffer.getDescriptor(uniformBuffer, 1, snvk.DESCRIPTOR_TYPE_UNIFORM);
+  uniformBuffer.subData(0, uniformData, 0, uniformData.byteLength);
 
   let storageBuffer = snvk.createBuffer(storageBufferCreateInfo);
-  let storageDescriptor = snvk.getDescriptor(storageBuffer, 0, snvk.DESCRIPTOR_TYPE_STORAGE);
+  let storageDescriptor = storageBuffer.getDescriptor(storageBuffer, 0, snvk.DESCRIPTOR_TYPE_STORAGE);
 
   let computePipelineCreateInfo = {
     shader: compShader,
@@ -72,7 +72,7 @@ export function main() {
   snvk.submit(submitInfo);
 
   time("  vk readback...")
-  let view = new Float32Array(snvk.bufferReadData(storageBuffer));
+  let view = new Float32Array(storageBuffer.readData());
 
   time("  png pack...")
   

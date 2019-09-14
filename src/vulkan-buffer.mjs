@@ -1,108 +1,151 @@
 import nvk from "nvk"
-import { pushHandle, deleteHandle } from "./utils.mjs";
+import { pushHandle, deleteHandle, assertVulkan } from "./utils.mjs";
 
 export let bufferChanged = false;
 export let bufferHandles = [];
 export let indexBufferHandle = null;
 
 export function createBuffer(createInfo) {
-  let { size, usage, staging = this.BUFFER_STAGING_DYNAMIC, readable = false } = createInfo;
 
-  let vkUsageBits = this.getVkBufferUsageBits(usage, readable);
-
-  let hostBuffer = null;
-  if (staging === this.BUFFER_STAGING_STATIC) {
-    hostBuffer = this.createVkHostBuffer(size, vkUsageBits.host);
-  }
-  let localBuffer = this.createVkBuffer(
-    size,
-    vkUsageBits.local,
-    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-  );
-
-  let bufferHandle = {
-    id: -1,
-    vksHost: hostBuffer,
-    vksLocal: localBuffer,
-    vkUsageBits: vkUsageBits,
-    staging: staging,
-    usage: usage,
-    size: size,
-    readable: readable,
-  }
+  let bufferHandle = new BufferHandle(this, createInfo)
 
   pushHandle(this.bufferHandles, bufferHandle);
 
   return bufferHandle;
 }
 
-export function createVkHostBuffer(size, bufferUsageFlags) {
-  return this.createVkBuffer(
+export function destroyBuffer(handle) {
+  if (handle.id === -1) return;
+  if (handle.staging === this.BUFFER_STAGING_STATIC) {
+    destroyVkBuffer(this, handle.vksHost);
+  }
+
+  destroyVkBuffer(this, handle.vksLocal);
+  deleteHandle(this.bufferHandles, handle);
+}
+
+class BufferHandle {
+  constructor(snvk, { size, usage, staging = snvk.BUFFER_STAGING_DYNAMIC, readable = false }) {
+    this.snvk = snvk;
+    this.device = snvk.device;
+    this.physicalDevice = snvk.physicalDevice;
+
+    let vkUsageBits = getVkBufferUsageBits(this.snvk, usage, readable);
+
+    let hostBuffer = null;
+    if (staging === snvk.BUFFER_STAGING_STATIC) {
+      hostBuffer = createVkHostBuffer(this.snvk, size, vkUsageBits.host);
+    }
+    let localBuffer = createVkBuffer(this.snvk,
+      size,
+      vkUsageBits.local,
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+    );
+
+    this.id = -1;
+    this.vksHost = hostBuffer;
+    this.vksLocal = localBuffer;
+    this.vkUsageBits = vkUsageBits;
+    this.staging = staging;
+    this.usage = usage;
+    this.size = size;
+    this.readable = readable;
+  }
+
+  subData(offsetDst, data, offsetSrc, length = null) {
+    let dataPtr = { $: 0n };
+    if (length === null) length = data.buffer.size;
+
+    let offsetHost = offsetDst;
+    if (this.staging === this.snvk.BUFFER_STAGING_DYNAMIC) {
+      this.vksHost = createVkHostBuffer(this.snvk, length, this.vkUsageBits.host);
+      offsetHost = 0;
+    }
+
+    let result = vkMapMemory(this.device, this.vksHost.vkMemory, offsetHost, length, 0, dataPtr);
+    assertVulkan(result);
+
+    let dstView = new Uint8Array(ArrayBuffer.fromAddress(dataPtr.$, length));
+    let srcView = new Uint8Array(data.buffer).subarray(offsetSrc, offsetSrc + length);
+    dstView.set(srcView, 0);
+
+    vkUnmapMemory(this.device, this.vksHost.vkMemory);
+
+    copyVkBuffer(this.snvk, this.vksHost.vkBuffer, offsetHost, this.vksLocal.vkBuffer, offsetDst, length);
+
+    if (this.staging === this.snvk.BUFFER_STAGING_DYNAMIC) {
+      destroyVkBuffer(this.snvk, this.vksHost);
+    }
+  }
+  readData(offset = 0, length = null) {
+    let dataPtr = { $: 0n };
+    if (length === null) length = this.size;
+
+    let offsetHost = offset;
+    if (this.staging === this.snvk.BUFFER_STAGING_DYNAMIC) {
+      this.vksHost = createVkHostBuffer(this.snvk, length, this.vkUsageBits.host);
+      offsetHost = 0;
+    }
+
+    copyVkBuffer(this.snvk, this.vksLocal.vkBuffer, offset, this.vksHost.vkBuffer, offsetHost, length);
+
+    let result = vkMapMemory(this.device, this.vksHost.vkMemory, offsetHost, length, 0, dataPtr);
+    assertVulkan(result);
+
+    let buffer = ArrayBuffer.fromAddress(dataPtr.$, length);
+
+    if (this.staging === this.snvk.BUFFER_STAGING_DYNAMIC) {
+      destroyVkBuffer(this.snvk, this.vksHost);
+    }
+
+    return buffer;
+  }
+  copy(srcHandle, offsetSrc, dstHandle, offsetDst, size) {
+    copyVkBuffer(this.snvk, srcHandle.vksLocal.vkBuffer, offsetSrc, dstHandle.vksLocal.vkBuffer, offsetDst, size);
+  }
+
+  getBinding(buffer, binding = 0, stride = 1) {
+    return {
+      buffer,
+      binding,
+      stride,
+    }
+  }
+
+  getAttribute(binding, location, type, size, offset = 0) {
+    let format = findVkFormat(this.snvk, type >> 4, size, type & 15);
+    return {
+      binding,
+      location,
+      format,
+      offset,
+    }
+  }
+
+  getDescriptor(buffer, binding, type) {
+    return {
+      buffer,
+      binding,
+      type,
+    }
+  }
+}
+
+function createVkHostBuffer(snvk, size, bufferUsageFlags) {
+  return createVkBuffer(snvk,
     size,
     bufferUsageFlags,
     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
   );
 }
 
-export function bufferSubData(handle, offsetDst, data, offsetSrc, length = null) {
-  let dataPtr = { $: 0n };
-  if (length === null) length = data.buffer.size;
-
-  let offsetHost = offsetDst;
-  if (handle.staging === this.BUFFER_STAGING_DYNAMIC) {
-    handle.vksHost = this.createVkHostBuffer(length, handle.vkUsageBits.host);
-    offsetHost = 0;
-  }
-
-  let result = vkMapMemory(this.device, handle.vksHost.vkMemory, offsetHost, length, 0, dataPtr);
-  this.assertVulkan(result);
-
-  let dstView = new Uint8Array(ArrayBuffer.fromAddress(dataPtr.$, length));
-  let srcView = new Uint8Array(data.buffer).subarray(offsetSrc, offsetSrc + length);
-  dstView.set(srcView, 0);
-
-  vkUnmapMemory(this.device, handle.vksHost.vkMemory);
-
-  this.copyVkBuffer(handle.vksHost.vkBuffer, offsetHost, handle.vksLocal.vkBuffer, offsetDst, length);
-
-  if (handle.staging === this.BUFFER_STAGING_DYNAMIC) {
-    this.destroyVkBuffer(handle.vksHost);
-  }
-}
-export function bufferReadData(handle, offset = 0, length = null) {
-  let dataPtr = { $: 0n };
-  if (length === null) length = handle.size;
-
-  let offsetHost = offset;
-  if (handle.staging === this.BUFFER_STAGING_DYNAMIC) {
-    handle.vksHost = this.createVkHostBuffer(length, handle.vkUsageBits.host);
-    offsetHost = 0;
-  }
-
-  this.copyVkBuffer(handle.vksLocal.vkBuffer, offset, handle.vksHost.vkBuffer, offsetHost, length);
-
-  let result = vkMapMemory(this.device, handle.vksHost.vkMemory, offsetHost, length, 0, dataPtr);
-  this.assertVulkan(result);
-
-  let buffer = ArrayBuffer.fromAddress(dataPtr.$, length);
-
-  if (handle.staging === this.BUFFER_STAGING_DYNAMIC) {
-    this.destroyVkBuffer(handle.vksHost);
-  }
-
-  return buffer;
-}
-export function copyBuffer(srcHandle, offsetSrc, dstHandle, offsetDst, size) {
-  this.copyVkBuffer(srcHandle.vksLocal.vkBuffer, offsetSrc, dstHandle.vksLocal.vkBuffer, offsetDst, size);
-}
-export function copyVkBuffer(src, offsetSrc, dst, offsetDst, size) {
-
+function copyVkBuffer(snvk, src, offsetSrc, dst, offsetDst, size) {
   let commandCreateInfo = {
-    level: this.COMMAND_LEVEL_PRIMARY,
-    usage: this.COMMAND_USAGE_ONE_TIME,
+    level: snvk.COMMAND_LEVEL_PRIMARY,
+    usage: snvk.COMMAND_USAGE_ONE_TIME,
   }
-  let commandBuffer = this.createCommandBuffer(commandCreateInfo);
-  this.cmdBegin(commandBuffer);
+  let commandBuffer = snvk.createCommandBuffer(commandCreateInfo);
+  snvk.cmdBegin(commandBuffer);
   let { vkCommandBuffer } = commandBuffer;
 
   let bufferCopy = new VkBufferCopy();
@@ -111,53 +154,18 @@ export function copyVkBuffer(src, offsetSrc, dst, offsetDst, size) {
   bufferCopy.size = size;
   vkCmdCopyBuffer(vkCommandBuffer, src, dst, 1, [bufferCopy]);
 
-  this.cmdEnd(commandBuffer);
+  snvk.cmdEnd(commandBuffer);
 
   let submitInfo = {
     commandBuffer: commandBuffer,
     blocking: true,
   }
-  this.submit(submitInfo);
+  snvk.submit(submitInfo);
 
-  this.destroyCommandBuffer(commandBuffer);
-}
-export function destroyBuffer(handle) {
-  if (handle.id === -1) return;
-  this.bufferChanged = true;
-  if (handle.staging === this.BUFFER_STAGING_STATIC) {
-    this.destroyVkBuffer(handle.vksHost);
-  }
-  this.destroyVkBuffer(handle.vksLocal);
-  deleteHandle(this.bufferHandles, handle);
+  snvk.destroyCommandBuffer(commandBuffer);
 }
 
-export function getBinding(buffer, binding = 0, stride = 1) {
-  return {
-    buffer,
-    binding,
-    stride,
-  }
-}
-
-export function getAttribute(binding, location, type, size, offset = 0) {
-  let format = this.findVkFormat(type >> 4, size, type & 15);
-  return {
-    binding,
-    location,
-    format,
-    offset,
-  }
-}
-
-export function getDescriptor(buffer, binding, type) {
-  return {
-    buffer,
-    binding,
-    type,
-  }
-}
-
-export function createVkBuffer(bufferSize,bufferUsageFlags,memoryPropertieFlags){
+function createVkBuffer(snvk, bufferSize, bufferUsageFlags, memoryPropertieFlags) {
   let bufferInfo = new VkBufferCreateInfo();
   bufferInfo.size = bufferSize;
   bufferInfo.usage = bufferUsageFlags;
@@ -166,23 +174,23 @@ export function createVkBuffer(bufferSize,bufferUsageFlags,memoryPropertieFlags)
   bufferInfo.pQueueFamilyIndices = null;
 
   let buffer = new VkBuffer();
-  let result = vkCreateBuffer(this.device, bufferInfo, null, buffer);
-  this.assertVulkan(result);
-  
+  let result = vkCreateBuffer(snvk.device, bufferInfo, null, buffer);
+  assertVulkan(result);
+
   let memoryRequirements = new VkMemoryRequirements()
-  vkGetBufferMemoryRequirements(this.device, buffer, memoryRequirements);
-  
+  vkGetBufferMemoryRequirements(snvk.device, buffer, memoryRequirements);
+
   let memoryAllocateInfo = new VkMemoryAllocateInfo();
   memoryAllocateInfo.allocationSize = memoryRequirements.size;
-  memoryAllocateInfo.memoryTypeIndex = this.findMemoryTypeIndex(
+  memoryAllocateInfo.memoryTypeIndex = findVkMemoryTypeIndex(snvk,
     memoryRequirements.memoryTypeBits, memoryPropertieFlags
   );
 
   let memory = new VkDeviceMemory();
-  result = vkAllocateMemory(this.device, memoryAllocateInfo, null, memory);
-  this.assertVulkan(result);
+  result = vkAllocateMemory(snvk.device, memoryAllocateInfo, null, memory);
+  assertVulkan(result);
 
-  vkBindBufferMemory(this.device, buffer, memory, 0n);
+  vkBindBufferMemory(snvk.device, buffer, memory, 0n);
 
   return {
     vkBuffer: buffer,
@@ -190,14 +198,14 @@ export function createVkBuffer(bufferSize,bufferUsageFlags,memoryPropertieFlags)
   }
 }
 
-export function destroyVkBuffer(buffer) {
-  vkFreeMemory(this.device, buffer.vkMemory);
-  vkDestroyBuffer(this.device, buffer.vkBuffer, null);
+function destroyVkBuffer(snvk, buffer) {
+  vkFreeMemory(snvk.device, buffer.vkMemory);
+  vkDestroyBuffer(snvk.device, buffer.vkBuffer, null);
 }
 
-export function findVkFormat(size, vec, type) {
+function findVkFormat(snvk, size, vec, type) {
   let enumName = `VK_FORMAT_`
-  size*=8;
+  size *= 8;
   switch (vec) {
     case 1: enumName += `R${size}`; break;
     case 2: enumName += `R${size}G${size}`; break;
@@ -205,14 +213,14 @@ export function findVkFormat(size, vec, type) {
     case 4: enumName += `R${size}G${size}B${size}A${size}`; break;
   }
   switch (type) {
-    case this.UINT: enumName += `_UINT`; break;
-    case this.INT: enumName += `_SINT`; break;
-    case this.FLOAT: enumName += `_SFLOAT`; break;
+    case snvk.UINT: enumName += `_UINT`; break;
+    case snvk.INT: enumName += `_SINT`; break;
+    case snvk.FLOAT: enumName += `_SFLOAT`; break;
   }
   return nvk[enumName];
 }
 
-export function getVkBufferUsageBits(usage, readable) {
+function getVkBufferUsageBits(snvk, usage, readable) {
   let host = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
   let local = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
   if (readable) {
@@ -223,9 +231,9 @@ export function getVkBufferUsageBits(usage, readable) {
   return { host, local };
 }
 
-export function findMemoryTypeIndex(typeFilter, properties) {
+function findVkMemoryTypeIndex(snvk, typeFilter, properties) {
   let memoryProperties = new VkPhysicalDeviceMemoryProperties();
-  vkGetPhysicalDeviceMemoryProperties(this.physicalDevice, memoryProperties);
+  vkGetPhysicalDeviceMemoryProperties(snvk.physicalDevice, memoryProperties);
   for (let i = 0; i < memoryProperties.memoryTypeCount; i++) {
     if (typeFilter & (1 << i) && ((memoryProperties.memoryTypes[i].propertyFlags & properties))) {
       return i;
