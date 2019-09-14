@@ -6,6 +6,7 @@ export let renderPipelineHandles = [];
 export let renderPassHandles = [];
 
 export function createRenderPass(createInfo) {
+  let { backgroundColor = [0, 0, 0, 1] } = createInfo;
   let renderPass = new VkRenderPass();
 
   let attachmentDescription = new VkAttachmentDescription();
@@ -57,6 +58,7 @@ export function createRenderPass(createInfo) {
   let handle = {
     id: -1,
     vkRenderPass: renderPass,
+    backgroundColor: backgroundColor,
   }
 
   pushHandle(this.renderPassHandles,handle);
@@ -72,7 +74,7 @@ export function destroyRenderPass(handle) {
 export function createRenderPipeline(createInfo) {
   let result;
   let {
-    renderPass, shaders = [], bindings = [], descriptors = [], attributes = [], 
+    renderPass, shaders = [], descriptors = [], attributes = [], 
     backgroundColor = [0, 0, 0, 1], 
     rasterizationInfo = {}, blendingInfo = {}, assemblyInfo = {},
     viewport = null, basePipeline = null 
@@ -88,6 +90,14 @@ export function createRenderPipeline(createInfo) {
     srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE, dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO, alphaBlendOp = VK_BLEND_OP_ADD, enabled = true,
   } = blendingInfo;
 
+  let bindings = [];
+  for (let i = 0;i<attributes.length;i++){
+    let binding = attributes[i].binding;
+    if (!bindings.includes(binding)){
+      bindings.push(binding);
+    }
+  }
+  
   let shaderInputInfo = this.createShaderInput(shaders);
   let bufferInputInfo = this.createBufferInput(bindings, attributes);
   let pipelineLayout = this.createPipelineLayout(descriptors, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);

@@ -43,25 +43,8 @@ export function cmdBegin(commandBuffer) {
   this.assertVulkan(result);
 }
 
-export function cmdBeginRender(commandBuffer, pipeline, frambuffer, backColor) {
+export function cmdBindRenderPipeline(commandBuffer, pipeline){
   let { vkCommandBuffer } = commandBuffer;
-
-  let renderPassBeginInfo = new VkRenderPassBeginInfo();
-  renderPassBeginInfo.renderPass = pipeline.vkRenderPass;
-  renderPassBeginInfo.framebuffer = frambuffer.vkFramebuffer;
-  renderPassBeginInfo.renderArea.offset.x = 0;
-  renderPassBeginInfo.renderArea.offset.y = 0;
-  renderPassBeginInfo.renderArea.extent.width = frambuffer.width;
-  renderPassBeginInfo.renderArea.extent.height = frambuffer.height;
-  renderPassBeginInfo.clearValueCount = 1;
-  renderPassBeginInfo.pClearValues = [new VkClearValue({
-    color: new VkClearColorValue({
-      float32: pipeline.backgroundColor,
-    }),
-    depthStencil: null,
-  })];
-
-  vkCmdBeginRenderPass(vkCommandBuffer, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
   vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vkPipeline);
 
@@ -79,25 +62,26 @@ export function cmdBeginRender(commandBuffer, pipeline, frambuffer, backColor) {
   vkCmdBindVertexBuffers(vkCommandBuffer, 0, vertexBuffers.length, vertexBuffers, offsets);
 }
 
-/*
-  let viewport = new VkViewport();
-  viewport.x = 0;
-  viewport.y = 0;
-  viewport.width = frambuffer.width;
-  viewport.height = frambuffer.height;
-  viewport.minDepth = 0;
-  viewport.maxDepth = 1;
- 
-  let scissor = new VkRect2D();
-  scissor.offset.x = 0;
-  scissor.offset.y = 0;
-  scissor.extent.width = frambuffer.width;
-  scissor.extent.height = frambuffer.height;
- 
-  vkCmdSetViewport(cmdBuffer, 0, 1, [viewport]);
+export function cmdBeginRender(commandBuffer, renderPass, frambuffer, backColor) {
+  let { vkCommandBuffer } = commandBuffer;
 
-  vkCmdSetScissor(cmdBuffer, 0, 1, [scissor]);
-*/
+  let renderPassBeginInfo = new VkRenderPassBeginInfo();
+  renderPassBeginInfo.renderPass = renderPass.vkRenderPass;
+  renderPassBeginInfo.framebuffer = frambuffer.vkFramebuffer;
+  renderPassBeginInfo.renderArea.offset.x = 0;
+  renderPassBeginInfo.renderArea.offset.y = 0;
+  renderPassBeginInfo.renderArea.extent.width = frambuffer.width;
+  renderPassBeginInfo.renderArea.extent.height = frambuffer.height;
+  renderPassBeginInfo.clearValueCount = 1;
+  renderPassBeginInfo.pClearValues = [new VkClearValue({
+    color: new VkClearColorValue({
+      float32: renderPass.backgroundColor,
+    }),
+    depthStencil: null,
+  })];
+
+  vkCmdBeginRenderPass(vkCommandBuffer, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
 
 export function cmdBindIndexBuffer(commandBuffer, indexBuffer) {
   let { vkCommandBuffer } = commandBuffer;
@@ -187,3 +171,23 @@ export function submit(submitInfo) {
   }
 
 }
+
+/*
+  let viewport = new VkViewport();
+  viewport.x = 0;
+  viewport.y = 0;
+  viewport.width = frambuffer.width;
+  viewport.height = frambuffer.height;
+  viewport.minDepth = 0;
+  viewport.maxDepth = 1;
+ 
+  let scissor = new VkRect2D();
+  scissor.offset.x = 0;
+  scissor.offset.y = 0;
+  scissor.extent.width = frambuffer.width;
+  scissor.extent.height = frambuffer.height;
+ 
+  vkCmdSetViewport(cmdBuffer, 0, 1, [viewport]);
+
+  vkCmdSetScissor(cmdBuffer, 0, 1, [scissor]);
+*/

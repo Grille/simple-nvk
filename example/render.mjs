@@ -137,14 +137,16 @@ function createInput() {
 
   buffers = {indexBuffer, uniformBuffer};
   shaders = [vertShader, fragShader];
-  bindings = [posBinding, colorBinding];
   attributes = [posAttrib, colorAttrib];
   descriptors = [uniformDescriptor];
 
 }
 
 function createPipeline() {
-  renderPass = snvk.createRenderPass();
+  let renderPassCreateInfo = {
+    backgroundColor: [0, 0, 0.5, 1],
+  }
+  renderPass = snvk.createRenderPass(renderPassCreateInfo);
 
   let rasterizationInfo = {
     polygonMode: snvk.POLYGON_MODE_FILL,
@@ -155,10 +157,8 @@ function createPipeline() {
     renderPass: renderPass,
     viewport: snvk.createViewport(),
     shaders: shaders,
-    bindings: bindings,
     descriptors: descriptors,
     attributes: attributes,
-    backgroundColor: [0, 0, 0.5, 1],
   }
   renderPipeline = snvk.createRenderPipeline(renderPipelineCreateInfo);
 
@@ -187,8 +187,11 @@ function createPipeline() {
 
     snvk.cmdBegin(command);
 
-    snvk.cmdBeginRender(command, renderPipeline, framebuffer);
+    snvk.cmdBindRenderPipeline(command, renderPipeline);
     snvk.cmdBindIndexBuffer(command, buffers.indexBuffer);
+    
+    snvk.cmdBeginRender(command, renderPass, framebuffer);
+
     snvk.cmdDrawIndexed(command, 0, indexData.length);
 
     snvk.cmdEndRender(command);
