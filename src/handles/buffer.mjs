@@ -1,17 +1,7 @@
-import nvk from "nvk"
+import { assertVulkan } from "../utils.mjs";
 import Handle from "./handle.mjs";
-import { pushHandle, deleteHandle, assertVulkan } from "../utils.mjs";
 
-export let bufferHandles = [];
-
-export function createBuffer(createInfo) {
-  return new BufferHandle(this, createInfo)
-}
-export function destroyBuffer(handle) {
-  handle.destroy();
-}
-
-export class BufferHandle extends Handle {
+export default class BufferHandle extends Handle {
   constructor(snvk, { size, usage, staging = snvk.BUFFER_STAGING_DYNAMIC, readable = false }) {
     super(snvk);
 
@@ -35,18 +25,14 @@ export class BufferHandle extends Handle {
     this.usage = usage;
     this.size = size;
     this.readable = readable;
-
-    pushHandle(snvk.bufferHandles, this);
   }
 
   destroy() {
     let { snvk } = this;
-    if (this.id === -1) return;
     if (this.staging === snvk.BUFFER_STAGING_STATIC) {
       destroyVkBuffer(snvk, this.vksHost);
     }
     destroyVkBuffer(snvk, this.vksLocal);
-    deleteHandle(snvk.bufferHandles, this);
   }
 
   subData(offsetDst, data, offsetSrc, length = null) {
@@ -160,7 +146,7 @@ function copyVkBuffer(snvk, src, offsetSrc, dst, offsetDst, size) {
   }
   snvk.submit(submitInfo);
 
-  snvk.destroyCommandBuffer(command);
+  snvk.destroyHandle(command);
 }
 
 function createVkBuffer(snvk, bufferSize, bufferUsageFlags, memoryPropertieFlags) {

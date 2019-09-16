@@ -52,18 +52,13 @@ export function createSurface() {
   let handle = {
     id: -1,
     vkSurface: surface,
+    destroy:()=>{
+      vkDestroySurfaceKHR(this.instance, handle.vkSurface, null);
+    }
   }
   pushHandle(this.surfaceHandles, handle);
   return handle;
 }
-
-export function destroySurface(handle) {
-  if (handle.id === -1) return;
-  vkDestroySurfaceKHR(this.instance, handle.vkSurface, null);
-  deleteHandle(this.surfaceHandles, handle)
-}
-
-
 
 export function getPhysicalDevice() {
   let physDevicesCount = { $: 0 };

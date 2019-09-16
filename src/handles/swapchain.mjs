@@ -1,22 +1,7 @@
-import nvk from "nvk"
-import { pushHandle, deleteHandle, InitializedArray, assertVulkan } from "../utils.mjs"
+import { assertVulkan, InitializedArray } from "../utils.mjs"
 import Handle from "./handle.mjs";
 
-export let swapchainHandles = [];
-
-export function createSwapchain(createInfo) {
-  let handle = new SwapchainHandle(this, createInfo);
-  pushHandle(this.swapchainHandles, handle);
-  return handle;
-}
-
-export function destroySwapchain(handle) {
-  if (handle.id === -1) return;
-  handle.destroy();
-  deleteHandle(this.swapchainHandles, handle);
-}
-
-export class SwapchainHandle extends Handle {
+export default class SwapchainHandle extends Handle {
   constructor(snvk, { renderPass, surface, width, height }) {
     super(snvk);
     let swapchainCreateInfo = new VkSwapchainCreateInfoKHR();
@@ -73,8 +58,8 @@ export class SwapchainHandle extends Handle {
   }
   destroy() {
     for (let i = 0; i < this.imageCount; i++) {
-      this.snvk.destroyFramebuffer(this.framebuffers[i]);
-      this.snvk.destroyImageView(this.imageViews[i]);
+      this.snvk.destroyHandle(this.framebuffers[i]);
+      this.snvk.destroyHandle(this.imageViews[i]);
     }
     vkDestroySwapchainKHR(this.device, this.vkSwapchain, null);
   }

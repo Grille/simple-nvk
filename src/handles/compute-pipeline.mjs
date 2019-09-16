@@ -1,22 +1,7 @@
-import nvk from "nvk"
-import { pushHandle, deleteHandle, assertVulkan } from "../utils.mjs"
+import { assertVulkan } from "../utils.mjs"
 import Handle from "./handle.mjs";
 
-export let computePipelineHandles = [];
-
-export function createComputePipeline(createInfo) {
-  let handle = new ComputePipelineHandle(this, createInfo);
-  pushHandle(this.computePipelineHandles, handle);
-  return handle;
-}
-
-export function destroyComputePipeline(handle) {
-  if (handle.id === -1) return;
-  handle.destroy();
-  deleteHandle(this.computePipelineHandles, handle);
-}
-
-export class ComputePipelineHandle extends Handle {
+export default class ComputePipelineHandle extends Handle {
   constructor(snvk, { shader, entryPoint = "main", descriptors = [] }) {
     super(snvk);
 
@@ -37,7 +22,7 @@ export class ComputePipelineHandle extends Handle {
     this.layout = pipelineLayout;
   }
   destroy() {
-    this.snvk.destroyPipelineLayout(this.layout);
+    this.snvk.destroyHandle(this.layout);
     vkDestroyPipeline(this.device, this.vkPipeline, null);
   }
 }

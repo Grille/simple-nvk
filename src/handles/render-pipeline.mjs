@@ -1,22 +1,7 @@
-import nvk from "nvk"
-import { pushHandle, deleteHandle, assertVulkan } from "../utils.mjs"
+import { assertVulkan } from "../utils.mjs"
 import Handle from "./handle.mjs";
 
-export let renderPipelineHandles = [];
-
-export function createRenderPipeline(createInfo) {
-  let handle = new RenderPipelineHandle(this, createInfo);
-  pushHandle(this.renderPipelineHandles, handle);
-  return handle;
-}
-
-export function destroyRenderPipeline(handle) {
-  if (handle.id === -1) return;
-  handle.destroy();
-  deleteHandle(this.renderPipelineHandles, handle);
-}
-
-export class RenderPipelineHandle extends Handle {
+export default class RenderPipelineHandle extends Handle {
   constructor(snvk,
     {
       renderPass, shaders = [], descriptors = [], attributes = [],
@@ -123,7 +108,7 @@ export class RenderPipelineHandle extends Handle {
     this.backgroundColor = backgroundColor;
   }
   destroy(){
-    this.snvk.destroyPipelineLayout(this.layout);
+    this.snvk.destroyHandle(this.layout);
     vkDestroyPipeline(this.device, this.vkPipeline, null);
   }
 }

@@ -1,22 +1,7 @@
-import nvk from "nvk"
-import { pushHandle, deleteHandle, assertVulkan } from "../utils.mjs"
+import { assertVulkan } from "../utils.mjs"
 import Handle from "./handle.mjs";
 
-export let renderPassHandles = [];
-
-export function createRenderPass(createInfo) {
-  let handle = new RenderPassHandle(this, createInfo);
-  pushHandle(this.renderPassHandles, handle);
-  return handle;
-}
-
-export function destroyRenderPass(handle) {
-  if (handle.id === -1) return;
-  handle.destroy();
-  deleteHandle(this.renderPassHandles, handle);
-}
-
-export class RenderPassHandle extends Handle {
+export default class RenderPassHandle extends Handle {
   constructor(snvk, { backgroundColor = [0, 0, 0, 1] }) {
     super(snvk);
     let renderPass = new VkRenderPass();

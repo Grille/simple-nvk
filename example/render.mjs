@@ -207,10 +207,10 @@ function destroyPipline() {
   ready = false;
 
   snvk.waitForIdle();
-  snvk.destroySwapchain(swapchain);
-  snvk.destroySurface(surface);
-  snvk.destroyRenderPipeline(renderPipeline);
-  snvk.destroyRenderPass(renderPass);
+  snvk.destroyHandle(swapchain);
+  snvk.destroyHandle(surface);
+  snvk.destroyHandle(renderPipeline);
+  snvk.destroyHandle(renderPass);
 }
 
 let lol = 0;

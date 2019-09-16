@@ -1,20 +1,7 @@
-import { pushHandle, deleteHandle } from "../utils.mjs";
+import { assertVulkan } from "../utils.mjs";
 import Handle from "./handle.mjs";
 
-export let fenceHandles = [];
-
-export function createFence() {
-  let handle = new FenceHandle(this);
-  pushHandle(this.fenceHandles, handle);
-  return handle;
-}
-export function destroyFence(handle) {
-  if (handle.id === -1) return;
-  handle.destroy();
-  deleteHandle(this.fenceHandles, handle);
-}
-
-export class FenceHandle extends Handle{
+export default class FenceHandle extends Handle{
   constructor(snvk, createInfo) {
     super(snvk);
 

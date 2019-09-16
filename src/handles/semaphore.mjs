@@ -1,21 +1,7 @@
-import { pushHandle, deleteHandle } from "../utils.mjs";
+import { assertVulkan } from "../utils.mjs";
 import Handle from "./handle.mjs";
 
-export let semaphoreHandles = [];
-
-export function createSemaphore() {
-  let handle = new SemaphoreHandle(this);
-  pushHandle(this.semaphoreHandles, handle);
-  return handle;
-}
-
-export function destroySemaphore(handle) {
-  if (handle.id === -1) return;
-  handle.destroy();
-  deleteHandle(this.semaphoreHandles, handle);
-}
-
-export class SemaphoreHandle extends Handle {
+export default class SemaphoreHandle extends Handle {
   constructor(snvk, createInfo) {
     super(snvk);
 

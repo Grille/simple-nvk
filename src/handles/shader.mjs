@@ -1,24 +1,9 @@
-import nvk from "nvk"
-import { pushHandle, deleteHandle, assertVulkan } from "../utils.mjs";
-import essentials from "nvk-essentials";
+import { assertVulkan } from "../utils.mjs";
 import Handle from "./handle.mjs";
+import essentials from "nvk-essentials";
 const { GLSL } = essentials;
 
-export let shaderHandles = [];
-
-export function createShader(createInfo) {
-  let handle = new ShaderHandle(this, createInfo);
-  pushHandle(this.shaderHandles, handle);
-  return handle;
-}
-
-export function destroyShader(handle) {
-  if (handle.id === -1) return;
-  handle.destroy();
-  deleteHandle(this.shaderHandles, handle);
-}
-
-export class ShaderHandle extends Handle {
+export default class ShaderHandle extends Handle {
   constructor(snvk, { source, format, stage }) {
     super(snvk);
     let byteCode = null

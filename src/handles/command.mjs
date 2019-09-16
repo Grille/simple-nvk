@@ -1,18 +1,7 @@
-import nvk from "nvk"
+import { assertVulkan } from "../utils.mjs"
 import Handle from "./handle.mjs";
-import { pushHandle, deleteHandle, InitializedArray, assertVulkan } from "../utils.mjs"
 
-export let commandBufferHandles = [];
-
-export function createCommandBuffer(createInfo) {
-  return new CommandBufferHandle(this, createInfo);
-}
-
-export function destroyCommandBuffer(handle) {
-  handle.destroy();
-}
-
-export class CommandBufferHandle extends Handle {
+export default class CommandBufferHandle extends Handle {
   constructor(snvk, { level, usage }) {
     super(snvk);
 
@@ -28,15 +17,11 @@ export class CommandBufferHandle extends Handle {
     this.vkCommandBuffer = vkCommandBuffer;
     this.level = level;
     this.usage = usage;
-
-    pushHandle(snvk.commandBufferHandles, this);
   }
 
   destroy() {
     let { snvk } = this;
-    if (this.id === -1) return;
     vkFreeCommandBuffers(snvk.device, snvk.commandPool, 1, [this.vkCommandBuffer]);
-    deleteHandle(snvk.commandBufferHandles, this);
   }
 
   begin() {
@@ -145,38 +130,6 @@ export class CommandBufferHandle extends Handle {
 
     vkCmdCopyBuffer(vkCommandBuffer, src.vksLocal.vkBuffer, dst.vksLocal.vkBuffer, 1, [bufferCopy]);
   }
-}
-
-export function submit(submitInfo) {
-  let { commandBuffer, waitSemaphore = null, signalSemaphore = null, signalFence = {}, blocking = false } = submitInfo;
-  let { vkFence = null } = signalFence;
-
-  let vkSubmitInfo = new VkSubmitInfo();
-  vkSubmitInfo.pWaitDstStageMask = new Int32Array([VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT]);
-  vkSubmitInfo.commandBufferCount = 1;
-  vkSubmitInfo.pCommandBuffers = [commandBuffer.vkCommandBuffer];
-  if (waitSemaphore !== null) {
-    vkSubmitInfo.waitSemaphoreCount = 1;
-    vkSubmitInfo.pWaitSemaphores = [waitSemaphore.vkSemaphore];
-  }
-  if (signalSemaphore !== null) {
-    vkSubmitInfo.signalSemaphoreCount = 1;
-    vkSubmitInfo.pSignalSemaphores = [signalSemaphore.vkSemaphore];
-  }
-
-  if (blocking) {
-    let fence = this.createFence();
-  
-    let result = vkQueueSubmit(this.queue, 1, [vkSubmitInfo], fence.vkFence);
-    assertVulkan(result);
-    fence.wait(60 * 1E3);
-    this.destroyFence(fence);
-  }
-  else {
-    let result = vkQueueSubmit(this.queue, 1, [vkSubmitInfo], vkFence);
-    assertVulkan(result);
-  }
-
 }
 
 /*

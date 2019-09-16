@@ -13,21 +13,21 @@ function destroyHandles(handles, func) {
 export function shutdownVulkan() {
   vkDeviceWaitIdle(this.device);
 
-  destroyHandles(this.fenceHandles, (a) => this.destroyFence(a));
-  destroyHandles(this.semaphoreHandles, (a) => this.destroySemaphore(a));
-  destroyHandles(this.framebufferHandles, (a) => this.destroyFramebuffer(a));
-  destroyHandles(this.imageViewHandles, (a) => this.destroyImageView(a));
-  destroyHandles(this.swapchainHandles, (a) => this.destroySwapchain(a));
-  destroyHandles(this.surfaceHandles, (a) => this.destroySurface(a));
-  destroyHandles(this.renderPassHandles, (a) => this.destroyRenderPass(a));
-  destroyHandles(this.commandBufferHandles, (a) => this.destroyCommandBuffer(a));
+  destroyHandles(this.fenceHandles, (a) => this.destroyHandle(a));
+  destroyHandles(this.semaphoreHandles, (a) => this.destroyHandle(a));
+  destroyHandles(this.framebufferHandles, (a) => this.destroyHandle(a));
+  destroyHandles(this.imageViewHandles, (a) => this.destroyHandle(a));
+  destroyHandles(this.swapchainHandles, (a) => this.destroyHandle(a));
+  destroyHandles(this.surfaceHandles, (a) => this.destroyHandle(a));
+  destroyHandles(this.renderPassHandles, (a) => this.destroyHandle(a));
+  destroyHandles(this.commandBufferHandles, (a) => this.destroyHandle(a));
 
-  destroyHandles(this.renderPipelineHandles, (a) => this.destroyRenderPipeline(a));
-  destroyHandles(this.computePipelineHandles, (a) => this.destroyComputePipeline(a));
-  destroyHandles(this.pipelineLayoutHandles, (a) => this.destroyPipelineLayout(a));
+  destroyHandles(this.renderPipelineHandles, (a) => this.destroyHandle(a));
+  destroyHandles(this.computePipelineHandles, (a) => this.destroyHandle(a));
+  destroyHandles(this.pipelineLayoutHandles, (a) => this.destroyHandle(a));
 
-  destroyHandles(this.bufferHandles, (a) => this.destroyBuffer(a));
-  destroyHandles(this.shaderHandles, (a) => this.destroyShader(a));
+  destroyHandles(this.bufferHandles, (a) => this.destroyHandle(a));
+  destroyHandles(this.shaderHandles, (a) => this.destroyHandle(a));
 
   vkDestroyCommandPool(this.device, this.commandPool, null);
   vkDestroyDevice(this.device, null);

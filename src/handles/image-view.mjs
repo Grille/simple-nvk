@@ -1,22 +1,7 @@
-import nvk from "nvk"
-import { pushHandle, deleteHandle, InitializedArray } from "../utils.mjs"
+import { assertVulkan } from "../utils.mjs"
 import Handle from "./handle.mjs";
 
-export let imageViewHandles = [];
-
-export function createImageView(createInfo) {
-  let handle = new ImageViewHandle(this, createInfo);
-  pushHandle(this.imageViewHandles, handle);
-  return handle;
-}
-
-export function destroyImageView(handle) {
-  if (handle.id === -1) return
-  handle.destroy();
-  deleteHandle(this.framebufferHandles, handle);
-}
-
-export class ImageViewHandle extends Handle {
+export default class ImageViewHandle extends Handle {
   constructor(snvk, { image }) {
     super(snvk);
     let imageViewCreateInfo = new VkImageViewCreateInfo();

@@ -15,14 +15,13 @@ export function pushHandle(handles,handle) {
     }
   }
   handle.id = id;
+  handle.handleList = handle;
   handles[id] = handle;
 }
 export function deleteHandle(handles,handle) {
   handles[handle.id] = null;
   handle.id = -1;
-  /*handles.sort((a, b)=>{
-    return b.id - a.id
-  });*/
+  handle.handleList = null;
 }
 
 export function assertVulkan(result){

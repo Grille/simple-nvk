@@ -1,22 +1,7 @@
-import nvk from "nvk"
-import { pushHandle, deleteHandle, assertVulkan } from "../utils.mjs"
+import { assertVulkan } from "../utils.mjs"
 import Handle from "./handle.mjs";
 
-export let pipelineLayoutHandles = [];
-
-export function createPipelineLayout(createInfo) {
-  let handle = new PipelineLayoutHandle(this, createInfo);
-  pushHandle(this.pipelineLayoutHandles, handle);
-  return handle;
-}
-
-export function destroyPipelineLayout(handle) {
-  if (handle.id === -1) return;
-  handle.destroy();
-  deleteHandle(this.pipelineLayoutHandles, handle);
-}
-
-class PipelineLayoutHandle extends Handle {
+export default class PipelineLayoutHandle extends Handle {
   constructor(snvk, { descriptors, flags }) {
     super(snvk);
     let result = 0;

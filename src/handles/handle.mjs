@@ -4,7 +4,7 @@ export default class Handle{
     this.snvk = snvk;
     this.device = snvk.device;
     this.physicalDevice = snvk.physicalDevice;
-    this.handles = [];
+    this.handleList = null;
   }
   destroy(){
     throw new Error("destroy not implemented");
