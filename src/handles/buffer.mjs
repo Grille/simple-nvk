@@ -1,5 +1,27 @@
 import { assertVulkan } from "../utils.mjs";
 import Handle from "./handle.mjs";
+import nvk from "nvk";
+
+class BindingObj {
+  constructor(bufferHandle, binding, stride) {
+    this.snvk = bufferHandle.snvk; this.buffer = bufferHandle; this.binding = binding; this.stride = stride;
+  }
+  getAttribute(location, type, size, offset = 0) {
+    return new AttributeObj(this, location, type, size, offset);
+  }
+}
+class AttributeObj {
+  constructor(bindingObj, location, type, size, offset) {
+    this.snvk = bindingObj.snvk;
+    let format = getVkFormat(this.snvk, type >> 4, size, type & 15);
+    this.binding = bindingObj; this.location = location; this.format = format; this.offset = offset;
+  }
+}
+class DescriptorObj {
+  constructor(bufferHandle, binding, type) {
+    this.buffer = bufferHandle; this.binding = binding; this.type = type;
+  }
+}
 
 export default class BufferHandle extends Handle {
   constructor(snvk, { size, usage, staging = snvk.BUFFER_STAGING_DYNAMIC, readable = false }) {
@@ -87,30 +109,12 @@ export default class BufferHandle extends Handle {
     copyVkBuffer(this.snvk, srcHandle.vksLocal.vkBuffer, offsetSrc, dstHandle.vksLocal.vkBuffer, offsetDst, size);
   }
 
-  getBinding(buffer, binding = 0, stride = 1) {
-    return {
-      buffer,
-      binding,
-      stride,
-    }
+  getBinding(binding = 0, stride = 1) {
+    return new BindingObj(this, binding, stride);
   }
 
-  getAttribute(binding, location, type, size, offset = 0) {
-    let format = getVkFormat(this.snvk, type >> 4, size, type & 15);
-    return {
-      binding,
-      location,
-      format,
-      offset,
-    }
-  }
-
-  getDescriptor(buffer, binding, type) {
-    return {
-      buffer,
-      binding,
-      type,
-    }
+  getDescriptor(binding, type) {
+    return new DescriptorObj(this, binding, type)
   }
 }
 

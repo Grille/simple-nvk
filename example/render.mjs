@@ -122,20 +122,20 @@ function createInput() {
   indexBuffer.subData(0, indexData, 0, indexData.byteLength);
 
   let uniformBuffer = snvk.createBuffer(uniformBufferCreateInfo);
-  let uniformDescriptor = uniformBuffer.getDescriptor(uniformBuffer, 0, snvk.DESCRIPTOR_TYPE_UNIFORM);
+  let uniformDescriptor = uniformBuffer.getDescriptor(0, snvk.DESCRIPTOR_TYPE_UNIFORM);
   uniformBuffer.subData(0, uniformData, 0, uniformData.byteLength);
 
   let posBuffer = snvk.createBuffer(posBufferCreateInfo);
-  let posBinding = posBuffer.getBinding(posBuffer, 0, 4 * 3);
-  let posAttrib = posBuffer.getAttribute(posBinding, 0, snvk.TYPE_FLOAT32, 3);
+  let posBinding = posBuffer.getBinding(0, 4 * 3);
+  let posAttrib = posBinding.getAttribute(0, snvk.TYPE_FLOAT32, 3);
   posBuffer.subData(0, posData, 0, posData.byteLength);
 
   let colorBuffer = snvk.createBuffer(colorBufferCreateInfo);
-  let colorBinding = colorBuffer.getBinding(colorBuffer, 1, 4 * 4);
-  let colorAttrib = colorBuffer.getAttribute(colorBinding, 1, snvk.TYPE_FLOAT32, 4);
+  let colorBinding = colorBuffer.getBinding(1, 4 * 4);
+  let colorAttrib = colorBinding.getAttribute(1, snvk.TYPE_FLOAT32, 4);
   colorBuffer.subData(0, colorData, 0, colorData.byteLength);
 
-  buffers = {indexBuffer, uniformBuffer};
+  buffers = { indexBuffer, uniformBuffer };
   shaders = [vertShader, fragShader];
   attributes = [posAttrib, colorAttrib];
   descriptors = [uniformDescriptor];
