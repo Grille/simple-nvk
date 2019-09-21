@@ -107,6 +107,7 @@ export default class PipelineLayoutHandle extends Handle {
     this.enabled = enabled;
   }
   destroy() {
+    this.super_destroy();
     vkDestroyDescriptorSetLayout(this.device, this.vkSetLayout, null);
     vkDestroyDescriptorPool(this.device, this.vkPool, null);
     vkDestroyPipelineLayout(this.device, this.vkPipelineLayout, null);

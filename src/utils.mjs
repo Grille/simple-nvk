@@ -6,20 +6,21 @@ export class InitializedArray {
   }
 };
 
-export function pushHandle(handles,handle) {
+export function pushHandle(owner, handle) {
+  let handles = owner.handles;
   let id = handles.length;
-  for (let i = 0;i<handles.length;i++){
-    if (handles[i]===null){
+  for (let i = 0; i < handles.length; i++) {
+    if (handles[i] === null) {
       id = i;
       break;
     }
   }
   handle.id = id;
-  handle.handleList = handle;
+  handle.owner = owner;
   handles[id] = handle;
 }
-export function deleteHandle(handles,handle) {
-  handles[handle.id] = null;
+export function deleteHandle(owner, handle) {
+  owner.handles[handle.id] = null;
   handle.id = -1;
   handle.handleList = null;
 }

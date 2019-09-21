@@ -24,6 +24,7 @@ export default class ImageViewHandle extends Handle {
     this.vkImageView = imageView;
   }
   destroy() {
+    this.super_destroy();
     vkDestroyImageView(this.device, this.vkImageView, null);
   }
 }

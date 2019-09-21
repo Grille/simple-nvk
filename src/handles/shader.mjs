@@ -38,6 +38,7 @@ export default class ShaderHandle extends Handle {
     this.vkShader = shaderModule;
   }
   destroy() {
+    this.super_destroy();
     vkDestroyShaderModule(this.device, this.vkShader, null);
   }
 

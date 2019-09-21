@@ -22,7 +22,8 @@ export default class ComputePipelineHandle extends Handle {
     this.layout = pipelineLayout;
   }
   destroy() {
-    this.snvk.destroyHandle(this.layout);
+    this.super_destroy();
+    this.layout.destroy();
     vkDestroyPipeline(this.device, this.vkPipeline, null);
   }
 }

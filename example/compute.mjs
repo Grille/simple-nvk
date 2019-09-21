@@ -1,8 +1,8 @@
-import Vulkan from "../src/vulkan.mjs";
+import SNVK from "../src/snvk.mjs";
 import fs from "fs";
 import pngjs from "pngjs"; const { PNG } = pngjs;
 
-let snvk = new Vulkan();
+let snvk = new SNVK();
 let width = 800;
 let height = 800;
 let workGroupSize = 32;
@@ -16,6 +16,8 @@ export function main() {
   snvk.startVulkan();
   snvk.closeWindow();
 
+  let device = snvk.createDevice();
+  
   time("  vk setup...")
   let compSrc = fs.readFileSync(`./example/compute.comp`);
   let compCreateInfo = {
@@ -23,7 +25,7 @@ export function main() {
     format: snvk.SHADER_SRC_GLSL,
     stage: snvk.SHADER_STAGE_COMPUTE,
   }
-  let compShader = snvk.createShader(compCreateInfo);
+  let compShader = device.createShader(compCreateInfo);
 
   let uniformData = new Uint32Array([
     width, height
@@ -38,24 +40,24 @@ export function main() {
     readable: true,
   }
 
-  let uniformBuffer = snvk.createBuffer(uniformBufferCreateInfo);
+  let uniformBuffer = device.createBuffer(uniformBufferCreateInfo);
   let uniformDescriptor = uniformBuffer.getDescriptor(1, snvk.DESCRIPTOR_TYPE_UNIFORM);
   uniformBuffer.subData(0, uniformData, 0, uniformData.byteLength);
 
-  let storageBuffer = snvk.createBuffer(storageBufferCreateInfo);
+  let storageBuffer = device.createBuffer(storageBufferCreateInfo);
   let storageDescriptor = storageBuffer.getDescriptor(0, snvk.DESCRIPTOR_TYPE_STORAGE);
 
   let computePipelineCreateInfo = {
     shader: compShader,
     descriptors: [uniformDescriptor, storageDescriptor],
   }
-  let computePipeline = snvk.createComputePipeline(computePipelineCreateInfo);
+  let computePipeline = device.createComputePipeline(computePipelineCreateInfo);
 
   let commandCreateInfo = {
     level: snvk.COMMAND_LEVEL_PRIMARY,
     usage: snvk.COMMAND_USAGE_ONE_TIME,
   }
-  let command = snvk.createCommandBuffer(commandCreateInfo);
+  let command = device.createCommandBuffer(commandCreateInfo);
 
   command.begin();
 
@@ -69,7 +71,7 @@ export function main() {
     commandBuffer: command,
     blocking: true,
   }
-  snvk.submit(submitInfo);
+  device.submit(submitInfo);
 
   time("  vk readback...")
   let view = new Float32Array(storageBuffer.readData());

@@ -57,9 +57,10 @@ export default class SwapchainHandle extends Handle {
     this.height = height;
   }
   destroy() {
+    this.super_destroy();
     for (let i = 0; i < this.imageCount; i++) {
-      this.snvk.destroyHandle(this.framebuffers[i]);
-      this.snvk.destroyHandle(this.imageViews[i]);
+      this.framebuffers[i].destroy();
+      this.imageViews[i].destroy();
     }
     vkDestroySwapchainKHR(this.device, this.vkSwapchain, null);
   }

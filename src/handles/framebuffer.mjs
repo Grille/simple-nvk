@@ -23,6 +23,7 @@ export default class FramebufferHandle extends Handle{
     this.height = height;
   }
   destroy(){
+    this.super_destroy();
     vkDestroyFramebuffer(this.device, this.vkFramebuffer, null);
   }
 }

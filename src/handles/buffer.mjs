@@ -50,6 +50,7 @@ export default class BufferHandle extends Handle {
   }
 
   destroy() {
+    this.super_destroy();
     let { snvk } = this;
     if (this.staging === snvk.BUFFER_STAGING_STATIC) {
       destroyVkBuffer(snvk, this.vksHost);
@@ -150,7 +151,7 @@ function copyVkBuffer(snvk, src, offsetSrc, dst, offsetDst, size) {
   }
   snvk.submit(submitInfo);
 
-  snvk.destroyHandle(command);
+  command.destroy();
 }
 
 function createVkBuffer(snvk, bufferSize, bufferUsageFlags, memoryPropertieFlags) {

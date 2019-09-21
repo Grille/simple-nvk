@@ -56,6 +56,7 @@ export default class RenderPassHandle extends Handle {
     this.backgroundColor = backgroundColor;
   }
   destroy(){
+    this.super_destroy();
     vkDestroyRenderPass(this.device, this.vkRenderPass, null);
   }
 }

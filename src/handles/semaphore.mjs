@@ -12,6 +12,7 @@ export default class SemaphoreHandle extends Handle {
     this.vkSemaphore = semaphore;
   }
   destroy() {
+    this.super_destroy();
     vkDestroySemaphore(this.device, this.vkSemaphore, null);
   }
 }

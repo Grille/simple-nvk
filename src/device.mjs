@@ -6,31 +6,45 @@ export default class DeviceHandle extends Handle{
     this.snvk = snvk;
     this.device = snvk.device;
     this.physicalDevice = snvk.physicalDevice;
-
     this.queue;
-
-    this.bufferHandles = [];
   }
+
   destroy() {
+    this.super_destroy();
     throw new Error("destroy not implemented");
   }
 
-  createBuffer(createInfo) {
-    return new BufferHandle(this, createInfo)
-  }
-  destroyBuffer(handle) {
-    handle.destroy();
-  }
-  createCommandBuffer(createInfo) {
-    return new CommandBufferHandle(this, createInfo);
-  }
-  
-  destroyCommandBuffer(handle) {
-    handle.destroy();
-  }
+  createBuffer(createInfo) { return this.create(BufferHandle, createInfo); }
 
+  createCommandBuffer(createInfo) { return this.create(CommandBufferHandle, createInfo); }
 
+  createComputePipeline(createInfo) { return this.create(ComputePipelineHandle, createInfo); }
 
+  createFence(createInfo) { return this.create(FenceHandle, createInfo); }
+
+  createFramebuffer(createInfo) { return this.create(FramebufferHandle, createInfo); }
+
+  createImageView(createInfo) { return this.create(ImageViewHandle, createInfo); }
+
+  createPipelineLayout(createInfo) { return this.create(PipelineLayoutHandle, createInfo); }
+
+  createRenderPass(createInfo) { return this.create(RenderPassHandle, createInfo); }
+
+  createRenderPipeline(createInfo) { return this.create(RenderPipelineHandle, createInfo); }
+
+  createSemaphore(createInfo) { return this.create(SemaphoreHandle, createInfo); }
+
+  createShader(createInfo) { return this.create(ShaderHandle, createInfo); }
+
+  createSurface(createInfo) { return this.create(SurfaceHandle, createInfo); }
+
+  createSwapchain(createInfo) { return this.create(SwapchainHandle, createInfo); }
+
+  create(Type, createInfo) {
+    let handle = new Type(this, createInfo);
+    pushHandle(this, handle);
+    return handle;
+  }
 
   submit(submitInfo) {
     let { commandBuffer, waitSemaphore = null, signalSemaphore = null, signalFence = {}, blocking = false } = submitInfo;
@@ -61,7 +75,5 @@ export default class DeviceHandle extends Handle{
       let result = vkQueueSubmit(this.queue, 1, [vkSubmitInfo], vkFence);
       assertVulkan(result);
     }
-  
   }
-
 }

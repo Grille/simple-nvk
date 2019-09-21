@@ -20,6 +20,7 @@ export default class CommandBufferHandle extends Handle {
   }
 
   destroy() {
+    this.super_destroy();
     let { snvk } = this;
     vkFreeCommandBuffers(snvk.device, snvk.commandPool, 1, [this.vkCommandBuffer]);
   }

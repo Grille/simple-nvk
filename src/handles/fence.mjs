@@ -12,6 +12,7 @@ export default class FenceHandle extends Handle{
     this.vkFence = fence;
   }
   destroy() {
+    this.super_destroy();
     vkDestroyFence(this.device, this.vkFence, null);
   }
   wait(timeout) {

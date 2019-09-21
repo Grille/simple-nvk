@@ -108,7 +108,8 @@ export default class RenderPipelineHandle extends Handle {
     this.backgroundColor = backgroundColor;
   }
   destroy(){
-    this.snvk.destroyHandle(this.layout);
+    this.super_destroy();
+    this.layout.destroy();
     vkDestroyPipeline(this.device, this.vkPipeline, null);
   }
 }

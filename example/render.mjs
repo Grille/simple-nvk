@@ -1,4 +1,4 @@
-import Vulkan from "../src/vulkan.mjs";
+import SNVK from "../src/snvk.mjs";
 import fs from "fs";
 import glm from "gl-matrix";
 
@@ -7,12 +7,12 @@ let fpsDate = Date.now();
 let frameDate = Date.now();
 let fpsCount = 0;
 let snvk = null;
+let device = null;
 let window = null;
 let title = "sNVK example";
 
 let buffers = null;
 let shaders = null;
-let bindings = null;
 let descriptors = null;
 let attributes = null;
 
@@ -59,13 +59,15 @@ let colorData = new Float32Array([
 ])
 
 export function main(){
-  snvk = new Vulkan();
+  snvk = new SNVK();
   snvk.startWindow({ width: 600, height: 600, title });
   window = snvk.window;
 
   console.log("start...");
 
   snvk.startVulkan();
+  device = snvk.createDevice();
+
   createInput();
   createPipeline();
 
@@ -98,8 +100,8 @@ function createInput() {
     stage: snvk.SHADER_STAGE_FRAGMENT,
   }
 
-  let vertShader = snvk.createShader(vertCreateInfo);
-  let fragShader = snvk.createShader(fragCreateInfo);
+  let vertShader = device.createShader(vertCreateInfo);
+  let fragShader = device.createShader(fragCreateInfo);
 
   let indexBufferCreateInfo = {
     size: indexData.byteLength,
@@ -118,19 +120,19 @@ function createInput() {
     usage: snvk.BUFFER_USAGE_VERTEX,
   }
 
-  let indexBuffer = snvk.createBuffer(indexBufferCreateInfo);
+  let indexBuffer = device.createBuffer(indexBufferCreateInfo);
   indexBuffer.subData(0, indexData, 0, indexData.byteLength);
 
-  let uniformBuffer = snvk.createBuffer(uniformBufferCreateInfo);
+  let uniformBuffer = device.createBuffer(uniformBufferCreateInfo);
   let uniformDescriptor = uniformBuffer.getDescriptor(0, snvk.DESCRIPTOR_TYPE_UNIFORM);
   uniformBuffer.subData(0, uniformData, 0, uniformData.byteLength);
 
-  let posBuffer = snvk.createBuffer(posBufferCreateInfo);
+  let posBuffer = device.createBuffer(posBufferCreateInfo);
   let posBinding = posBuffer.getBinding(0, 4 * 3);
   let posAttrib = posBinding.getAttribute(0, snvk.TYPE_FLOAT32, 3);
   posBuffer.subData(0, posData, 0, posData.byteLength);
 
-  let colorBuffer = snvk.createBuffer(colorBufferCreateInfo);
+  let colorBuffer = device.createBuffer(colorBufferCreateInfo);
   let colorBinding = colorBuffer.getBinding(1, 4 * 4);
   let colorAttrib = colorBinding.getAttribute(1, snvk.TYPE_FLOAT32, 4);
   colorBuffer.subData(0, colorData, 0, colorData.byteLength);
@@ -146,7 +148,7 @@ function createPipeline() {
   let renderPassCreateInfo = {
     backgroundColor: [0, 0, 0.5, 1],
   }
-  renderPass = snvk.createRenderPass(renderPassCreateInfo);
+  renderPass = device.createRenderPass(renderPassCreateInfo);
 
   let rasterizationInfo = {
     polygonMode: snvk.POLYGON_MODE_FILL,
@@ -155,14 +157,14 @@ function createPipeline() {
   let renderPipelineCreateInfo = {
     rasterizationInfo: rasterizationInfo,
     renderPass: renderPass,
-    viewport: snvk.createViewport(snvk),
+    viewport: device.createViewport(snvk),
     shaders: shaders,
     descriptors: descriptors,
     attributes: attributes,
   }
-  renderPipeline = snvk.createRenderPipeline(renderPipelineCreateInfo);
+  renderPipeline = device.createRenderPipeline(renderPipelineCreateInfo);
 
-  surface = snvk.createSurface();
+  surface = device.createSurface();
 
   let swapchainCreateInfo = {
     width: window.width,
@@ -170,10 +172,10 @@ function createPipeline() {
     renderPass: renderPass,
     surface: surface,
   }
-  swapchain = snvk.createSwapchain(swapchainCreateInfo);
+  swapchain = device.createSwapchain(swapchainCreateInfo);
 
-  frameAvailable = snvk.createSemaphore();
-  renderAvailable = snvk.createSemaphore();
+  frameAvailable = device.createSemaphore();
+  renderAvailable = device.createSemaphore();
 
   commandbuffers = [];
   for (let i = 0; i < swapchain.framebuffers.length; i++) {
@@ -183,7 +185,7 @@ function createPipeline() {
       level: snvk.COMMAND_LEVEL_PRIMARY,
       usage: snvk.COMMAND_USAGE_SIMULTANEOUS,
     }
-    let command = snvk.createCommandBuffer(commandCreateInfo);
+    let command = device.createCommandBuffer(commandCreateInfo);
 
     command.begin();
 
@@ -206,11 +208,11 @@ function createPipeline() {
 function destroyPipline() {
   ready = false;
 
-  snvk.waitForIdle();
-  snvk.destroyHandle(swapchain);
-  snvk.destroyHandle(surface);
-  snvk.destroyHandle(renderPipeline);
-  snvk.destroyHandle(renderPass);
+  device.waitForIdle();
+  swapchain.destroy();
+  surface.destroy();
+  renderPipeline.destroy();
+  renderPass.destroy();
 }
 
 let lol = 0;
@@ -250,7 +252,7 @@ function drawFrame() {
     signalSemaphore: renderAvailable,
     commandBuffer: command,
   }
-  snvk.submit(submitInfo);
+  device.submit(submitInfo);
   swapchain.present(renderAvailable);
 }
 
