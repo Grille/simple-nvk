@@ -2,16 +2,16 @@ import { assertVulkan } from "../utils.mjs"
 import Handle from "./handle.mjs";
 
 export default class CommandBufferHandle extends Handle {
-  constructor(snvk, { level, usage }) {
-    super(snvk);
+  constructor(owner, { level, usage }) {
+    super(owner);
 
     let commandBufferAllocateInfo = new VkCommandBufferAllocateInfo();
-    commandBufferAllocateInfo.commandPool = snvk.commandPool;
+    commandBufferAllocateInfo.commandPool = owner.commandPool;
     commandBufferAllocateInfo.level = level;
     commandBufferAllocateInfo.commandBufferCount = 1;
 
     let vkCommandBuffer = new VkCommandBuffer();
-    let result = vkAllocateCommandBuffers(snvk.device, commandBufferAllocateInfo, [vkCommandBuffer]);
+    let result = vkAllocateCommandBuffers(owner.device, commandBufferAllocateInfo, [vkCommandBuffer]);
     assertVulkan(result);
 
     this.vkCommandBuffer = vkCommandBuffer;
@@ -21,8 +21,8 @@ export default class CommandBufferHandle extends Handle {
 
   destroy() {
     this.super_destroy();
-    let { snvk } = this;
-    vkFreeCommandBuffers(snvk.device, snvk.commandPool, 1, [this.vkCommandBuffer]);
+    let { owner } = this;
+    vkFreeCommandBuffers(owner.device, owner.commandPool, 1, [this.vkCommandBuffer]);
   }
 
   begin() {

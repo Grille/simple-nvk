@@ -2,8 +2,8 @@ import { assertVulkan } from "../utils.mjs"
 import Handle from "./handle.mjs";
 
 export default class PipelineLayoutHandle extends Handle {
-  constructor(snvk, { descriptors, flags }) {
-    super(snvk);
+  constructor(owner, { descriptors, flags }) {
+    super(owner);
     let result = 0;
 
     let descriptorSetLayout = null;
@@ -36,7 +36,7 @@ export default class PipelineLayoutHandle extends Handle {
       layoutInfo.pBindings = layoutBindings;
 
       descriptorSetLayout = new VkDescriptorSetLayout();
-      result = vkCreateDescriptorSetLayout(snvk.device, layoutInfo, null, descriptorSetLayout);
+      result = vkCreateDescriptorSetLayout(owner.device, layoutInfo, null, descriptorSetLayout);
       assertVulkan(result);
 
       for (let type = 0; type < typeCounter.length; type++) {
@@ -56,7 +56,7 @@ export default class PipelineLayoutHandle extends Handle {
       descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
 
       descriptorPool = new VkDescriptorPool();
-      result = vkCreateDescriptorPool(snvk.device, descriptorPoolInfo, null, descriptorPool);
+      result = vkCreateDescriptorPool(owner.device, descriptorPoolInfo, null, descriptorPool);
       assertVulkan(result);
 
       let descriptorSetAllocInfo = new VkDescriptorSetAllocateInfo();
@@ -65,7 +65,7 @@ export default class PipelineLayoutHandle extends Handle {
       descriptorSetAllocInfo.pSetLayouts = [descriptorSetLayout];
 
       descriptorSet = new VkDescriptorSet();
-      result = vkAllocateDescriptorSets(snvk.device, descriptorSetAllocInfo, [descriptorSet]);
+      result = vkAllocateDescriptorSets(owner.device, descriptorSetAllocInfo, [descriptorSet]);
       assertVulkan(result);
 
       let writeDescriptorSets = [];
@@ -87,7 +87,7 @@ export default class PipelineLayoutHandle extends Handle {
 
         writeDescriptorSets[i] = writeDescriptorSet;
       }
-      vkUpdateDescriptorSets(snvk.device, descriptors.length, writeDescriptorSets, 0, null);
+      vkUpdateDescriptorSets(owner.device, descriptors.length, writeDescriptorSets, 0, null);
     }
 
     let pipelineLayoutInfo = new VkPipelineLayoutCreateInfo();
@@ -97,7 +97,7 @@ export default class PipelineLayoutHandle extends Handle {
     }
 
     let pipelineLayout = new VkPipelineLayout();
-    result = vkCreatePipelineLayout(snvk.device, pipelineLayoutInfo, null, pipelineLayout);
+    result = vkCreatePipelineLayout(owner.device, pipelineLayoutInfo, null, pipelineLayout);
     assertVulkan(result);
 
     this.vkPipelineLayout = pipelineLayout;

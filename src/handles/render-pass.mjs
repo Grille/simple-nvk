@@ -2,8 +2,8 @@ import { assertVulkan } from "../utils.mjs"
 import Handle from "./handle.mjs";
 
 export default class RenderPassHandle extends Handle {
-  constructor(snvk, { backgroundColor = [0, 0, 0, 1] }) {
-    super(snvk);
+  constructor(owner, { backgroundColor = [0, 0, 0, 1] }) {
+    super(owner);
     let renderPass = new VkRenderPass();
 
     let attachmentDescription = new VkAttachmentDescription();

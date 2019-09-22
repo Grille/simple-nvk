@@ -2,14 +2,14 @@ import { assertVulkan } from "../utils.mjs"
 import Handle from "./handle.mjs";
 
 export default class RenderPipelineHandle extends Handle {
-  constructor(snvk,
+  constructor(owner,
     {
       renderPass, shaders = [], descriptors = [], attributes = [],
       backgroundColor = [0, 0, 0, 1],
       rasterizationInfo = {}, blendingInfo = {}, assemblyInfo = {},
       viewport = null, basePipeline = null
     }) {
-    super(snvk);
+    super(owner);
 
     let {
       polygonMode = VK_POLYGON_MODE_FILL, cullMode = VK_CULL_MODE_BACK_BIT, frontFace = VK_FRONT_FACE_CLOCKWISE, lineWidth = 1
@@ -31,9 +31,9 @@ export default class RenderPipelineHandle extends Handle {
       }
     }
 
-    let shaderInputInfo = createShaderInput(snvk, shaders);
-    let bufferInputInfo = createBufferInput(snvk, bindings, attributes);
-    let pipelineLayout = snvk.createPipelineLayout({ descriptors, flags: (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT) });
+    let shaderInputInfo = createShaderInput(owner, shaders);
+    let bufferInputInfo = createBufferInput(owner, bindings, attributes);
+    let pipelineLayout = owner.createPipelineLayout({ descriptors, flags: (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT) });
 
     let assemblyCreateInfo = new VkPipelineInputAssemblyStateCreateInfo();
     assemblyCreateInfo.topology = topology;
@@ -114,7 +114,7 @@ export default class RenderPipelineHandle extends Handle {
   }
 }
 
-function createShaderInput(snvk, shaders) {
+function createShaderInput(owner, shaders) {
   let shaderStages = [];
   
   for (let i = 0; i < shaders.length; i++) {
@@ -130,7 +130,7 @@ function createShaderInput(snvk, shaders) {
   return shaderStages;
 }
 
-function createBufferInput(snvk, bindings,attributes) {
+function createBufferInput(owner, bindings,attributes) {
   let vertexBindings = [], vertexAttributes = [];
   let id = 0;
   

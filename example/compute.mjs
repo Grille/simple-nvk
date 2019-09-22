@@ -1,8 +1,7 @@
-import SNVK from "../src/snvk.mjs";
+import snvk from "../src/index.mjs";
 import fs from "fs";
 import pngjs from "pngjs"; const { PNG } = pngjs;
 
-let snvk = new SNVK();
 let width = 800;
 let height = 800;
 let workGroupSize = 32;
@@ -94,7 +93,7 @@ export function main() {
   png.pack().pipe(fs.createWriteStream("test.png"));
 
   time("  vk shutdown...")
-  snvk.shutdownVulkan();
+  snvk.shutdown();
 
   time("finish.\n")
 }

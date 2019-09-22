@@ -2,8 +2,8 @@ import { assertVulkan } from "../utils.mjs";
 import Handle from "./handle.mjs";
 
 export default class FenceHandle extends Handle{
-  constructor(snvk, createInfo) {
-    super(snvk);
+  constructor(owner, createInfo) {
+    super(owner);
 
     let fenceCreateInfo = new VkFenceCreateInfo();
     let fence = new VkFence();

@@ -1,17 +1,36 @@
+import nvk from "nvk";
+import { pushHandle, deleteHandle, InitializedArray, assertVulkan } from "./utils.mjs"
+
 import Handle from "./handles/handle.mjs";
+import BufferHandle from "./handles/buffer.mjs";
+import CommandBufferHandle from "./handles/command.mjs";
+import ComputePipelineHandle from "./handles/compute-pipeline.mjs";
+import FenceHandle from "./handles/fence.mjs";
+import FramebufferHandle from "./handles/framebuffer.mjs";
+import ImageViewHandle from "./handles/image-view.mjs";
+import PipelineLayoutHandle from "./handles/pipeline-layout.mjs";
+import RenderPassHandle from "./handles/render-pass.mjs";
+import RenderPipelineHandle from "./handles/render-pipeline.mjs";
+import SemaphoreHandle from "./handles/semaphore.mjs";
+import ShaderHandle from "./handles/shader.mjs";
+import SurfaceHandle from "./handles/surface.mjs";
+import SwapchainHandle from "./handles/swapchain.mjs";
 
 export default class DeviceHandle extends Handle{
-  constructor(snvk){
+  constructor(owner){
+    super(owner)
     this.id=-1;
-    this.snvk = snvk;
-    this.device = snvk.device;
-    this.physicalDevice = snvk.physicalDevice;
-    this.queue;
+    this.instance = owner.instance;
+    this.device = owner.device;
+    this.physicalDevice = owner.physicalDevice;
+    this.commandPool = owner.commandPool;
+    this.queue = owner.queue;
+    this.window = owner.window;
   }
 
   destroy() {
+    vkDeviceWaitIdle(this.device);
     this.super_destroy();
-    throw new Error("destroy not implemented");
   }
 
   createBuffer(createInfo) { return this.create(BufferHandle, createInfo); }
@@ -69,11 +88,35 @@ export default class DeviceHandle extends Handle{
       let result = vkQueueSubmit(this.queue, 1, [vkSubmitInfo], fence.vkFence);
       assertVulkan(result);
       fence.wait(60 * 1E3);
-      this.destroyFence(fence);
+      fence.destroy();
     }
     else {
       let result = vkQueueSubmit(this.queue, 1, [vkSubmitInfo], vkFence);
       assertVulkan(result);
     }
+  }
+
+  createViewport(snvk) {
+    let viewport = new VkViewport();
+    viewport.x = 0;
+    viewport.y = 0;
+    viewport.width = snvk.window.width;
+    viewport.height = snvk.window.height;
+    viewport.minDepth = 0;
+    viewport.maxDepth = 1;
+
+    let scissor = new VkRect2D();
+    scissor.offset.x = 0;
+    scissor.offset.y = 0;
+    scissor.extent.width = snvk.window.width;
+    scissor.extent.height = snvk.window.height;
+
+    let viewportCreateInfo = new VkPipelineViewportStateCreateInfo();
+    viewportCreateInfo.viewportCount = 1;
+    viewportCreateInfo.pViewports = [viewport];
+    viewportCreateInfo.scissorCount = 1;
+    viewportCreateInfo.pScissors = [scissor];
+
+    return viewportCreateInfo;
   }
 }

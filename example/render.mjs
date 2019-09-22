@@ -1,4 +1,4 @@
-import SNVK from "../src/snvk.mjs";
+import snvk from "../src/index.mjs";
 import fs from "fs";
 import glm from "gl-matrix";
 
@@ -6,7 +6,6 @@ let lastResize = 0;
 let fpsDate = Date.now();
 let frameDate = Date.now();
 let fpsCount = 0;
-let snvk = null;
 let device = null;
 let window = null;
 let title = "sNVK example";
@@ -59,7 +58,6 @@ let colorData = new Float32Array([
 ])
 
 export function main(){
-  snvk = new SNVK();
   snvk.startWindow({ width: 600, height: 600, title });
   window = snvk.window;
 
@@ -258,7 +256,7 @@ function drawFrame() {
 
 function eventLoop() {
   if (window.shouldClose()) {
-    snvk.shutdownVulkan();
+    snvk.shutdown();
   }
   else {
     window.pollEvents();

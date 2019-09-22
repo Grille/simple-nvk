@@ -5,7 +5,6 @@ export default class Handle{
     this.physicalDevice = owner.physicalDevice;
     this.handles = [];
     this.owner = owner;
-    this.snvk = owner;
   }
   pushHandle(handle){
     let id = this.handles.length;
@@ -23,7 +22,7 @@ export default class Handle{
     for (let i = this.handles.length - 1; i >= 0; i--) {
       let handle = this.handles[i];
       if (handle !== null && handle.id !== -1) {
-        func(handle);
+        handle.destroy();
       }
     }
     this.handles.length = 0;
@@ -31,7 +30,6 @@ export default class Handle{
       this.owner.handles[this.id] = null;
     }
     this.id = -1;
-    this.owner = null;
   }
   destroy(){
     throw new Error("destroy not implemented");

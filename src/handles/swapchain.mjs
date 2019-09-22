@@ -2,8 +2,8 @@ import { assertVulkan, InitializedArray } from "../utils.mjs"
 import Handle from "./handle.mjs";
 
 export default class SwapchainHandle extends Handle {
-  constructor(snvk, { renderPass, surface, width, height }) {
-    super(snvk);
+  constructor(owner, { renderPass, surface, width, height }) {
+    super(owner);
     let swapchainCreateInfo = new VkSwapchainCreateInfoKHR();
     swapchainCreateInfo.surface = surface.vkSurface;
     swapchainCreateInfo.minImageCount = 2;
@@ -37,7 +37,7 @@ export default class SwapchainHandle extends Handle {
       let imageViewCreateInfo = {
         image: swapchainImages[i],
       }
-      swapImageViews[i] = snvk.createImageView(imageViewCreateInfo);
+      swapImageViews[i] = owner.createImageView(imageViewCreateInfo);
 
       let framebufferCreateInfo = {
         renderPass: renderPass,
@@ -45,7 +45,7 @@ export default class SwapchainHandle extends Handle {
         width: width,
         height: height,
       }
-      framebuffers[i] = snvk.createFramebuffer(framebufferCreateInfo);
+      framebuffers[i] = owner.createFramebuffer(framebufferCreateInfo);
     }
 
     this.vkSwapchain = swapchain;
@@ -81,7 +81,7 @@ export default class SwapchainHandle extends Handle {
     presentInfoKHR.pImageIndices = new Uint32Array([this.imageIndex]);
     presentInfoKHR.pResults = null;
 
-    vkQueuePresentKHR(this.snvk.queue, presentInfoKHR);
+    vkQueuePresentKHR(this.owner.queue, presentInfoKHR);
   }
 
 }

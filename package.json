@@ -1,5 +1,5 @@
 {
-  "main": "src/vulkan.mjs",
+  "main": "src/index.mjs",
   "name": "simple-nvk",
   "version": "0.0.1",
   "scripts": {

@@ -1,11 +1,13 @@
 import { assertVulkan } from "../utils.mjs";
 import Handle from "./handle.mjs";
 import essentials from "nvk-essentials";
+import snvk from "../index.mjs";
+
 const { GLSL } = essentials;
 
 export default class ShaderHandle extends Handle {
-  constructor(snvk, { source, format, stage }) {
-    super(snvk);
+  constructor(owner, { source, format, stage }) {
+    super(owner);
     let byteCode = null
     if (format === snvk.SHADER_SRC_GLSL) {
       let extension = "";

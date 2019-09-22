@@ -2,8 +2,8 @@ import { assertVulkan } from "../utils.mjs"
 import Handle from "./handle.mjs";
 
 export default class ImageViewHandle extends Handle {
-  constructor(snvk, { image }) {
-    super(snvk);
+  constructor(owner, { image }) {
+    super(owner);
     let imageViewCreateInfo = new VkImageViewCreateInfo();
     imageViewCreateInfo.image = image;
     imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;

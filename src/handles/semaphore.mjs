@@ -2,8 +2,8 @@ import { assertVulkan } from "../utils.mjs";
 import Handle from "./handle.mjs";
 
 export default class SemaphoreHandle extends Handle {
-  constructor(snvk, createInfo) {
-    super(snvk);
+  constructor(owner, createInfo) {
+    super(owner);
 
     let semaphoreCreateInfo = new VkSemaphoreCreateInfo();
     let semaphore = new VkSemaphore();

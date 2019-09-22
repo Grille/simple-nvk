@@ -2,10 +2,10 @@ import { assertVulkan } from "../utils.mjs"
 import Handle from "./handle.mjs";
 
 export default class ComputePipelineHandle extends Handle {
-  constructor(snvk, { shader, entryPoint = "main", descriptors = [] }) {
-    super(snvk);
+  constructor(owner, { shader, entryPoint = "main", descriptors = [] }) {
+    super(owner);
 
-    let pipelineLayout = snvk.createPipelineLayout({ descriptors, flags: (VK_SHADER_STAGE_COMPUTE_BIT) });
+    let pipelineLayout = owner.createPipelineLayout({ descriptors, flags: (VK_SHADER_STAGE_COMPUTE_BIT) });
 
     let computePipelineInfo = new VkComputePipelineCreateInfo();
     computePipelineInfo.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;

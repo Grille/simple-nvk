@@ -2,8 +2,8 @@ import { assertVulkan } from "../utils.mjs"
 import Handle from "./handle.mjs";
 
 export default class FramebufferHandle extends Handle{
-  constructor(snvk, { renderPass, imageView, width, height }) {
-    super(snvk);
+  constructor(owner, { renderPass, imageView, width, height }) {
+    super(owner);
 
     let framebuffer = new VkFramebuffer();
 
