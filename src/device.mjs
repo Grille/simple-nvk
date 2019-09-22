@@ -33,6 +33,10 @@ export default class DeviceHandle extends Handle{
     this.super_destroy();
   }
 
+  waitIdle(){
+    vkDeviceWaitIdle(this.device);
+  }
+
   createBuffer(createInfo) { return this.create(BufferHandle, createInfo); }
 
   createCommandBuffer(createInfo) { return this.create(CommandBufferHandle, createInfo); }

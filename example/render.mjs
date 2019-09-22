@@ -206,7 +206,7 @@ function createPipeline() {
 function destroyPipline() {
   ready = false;
 
-  device.waitForIdle();
+  device.waitIdle();
   swapchain.destroy();
   surface.destroy();
   renderPipeline.destroy();
