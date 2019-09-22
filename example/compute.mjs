@@ -11,9 +11,7 @@ export function main() {
   print("compute example\n")
   date = Date.now();
   print("  vk start...")
-  snvk.startWindow({ width: 480, height: 320, title:"vf" });
   snvk.startVulkan();
-  snvk.closeWindow();
 
   let device = snvk.createDevice();
   

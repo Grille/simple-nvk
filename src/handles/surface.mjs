@@ -2,12 +2,12 @@ import { assertVulkan, InitializedArray } from "../utils.mjs"
 import Handle from "./handle.mjs";
 
 export default class SurfaceHandle extends Handle {
-  constructor(owner){
+  constructor(owner,{window}){
     super(owner);
     let { physicalDevice } = owner;
 
     let surface = new VkSurfaceKHR();
-    if (owner.window.createSurface(owner.instance, null, surface) !== 0)
+    if (window.createSurface(owner.instance, null, surface) !== 0)
       console.error("createSurface failed");
   
     let surfaceSupport = { $: false };

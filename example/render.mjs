@@ -162,7 +162,7 @@ function createPipeline() {
   }
   renderPipeline = device.createRenderPipeline(renderPipelineCreateInfo);
 
-  surface = device.createSurface();
+  surface = device.createSurface({window});
 
   let swapchainCreateInfo = {
     width: window.width,

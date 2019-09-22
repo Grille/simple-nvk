@@ -21,16 +21,26 @@ export default class DeviceHandle extends Handle{
     super(owner)
     this.id=-1;
     this.instance = owner.instance;
-    this.device = owner.device;
-    this.physicalDevice = owner.physicalDevice;
     this.commandPool = owner.commandPool;
-    this.queue = owner.queue;
-    this.window = owner.window;
+
+    this.physicalDevice = this.getPhysicalDevice();
+    this.queueFamily = this.getQueueFamilyIndex(this.physicalDevice);
+
+    this.device = this.getLogicalDevice(this.physicalDevice, this.queueFamily);
+    this.queue = this.getQueue(this.queueFamily);
+
+    let commandPoolCreateInfo = new VkCommandPoolCreateInfo();
+    commandPoolCreateInfo.queueFamilyIndex = this.queueFamily;
+
+    this.commandPool = new VkCommandPool();
+    let result = vkCreateCommandPool(this.device, commandPoolCreateInfo, null, this.commandPool);
+    assertVulkan(result);
   }
 
   destroy() {
-    vkDeviceWaitIdle(this.device);
     this.super_destroy();
+    vkDestroyCommandPool(this.device, this.commandPool, null);
+    vkDestroyDevice(this.device, null);
   }
 
   waitIdle(){
@@ -122,5 +132,74 @@ export default class DeviceHandle extends Handle{
     viewportCreateInfo.pScissors = [scissor];
 
     return viewportCreateInfo;
+  }
+
+  getPhysicalDevice() {
+    let physDevicesCount = { $: 0 };
+    vkEnumeratePhysicalDevices(this.instance, physDevicesCount, null);
+    let physDevices = new InitializedArray(VkPhysicalDevice, physDevicesCount.$);
+    vkEnumeratePhysicalDevices(this.instance, physDevicesCount, physDevices);
+  
+    let physicalDevice = physDevices[0];
+    let properties = new VkPhysicalDeviceProperties();
+    vkGetPhysicalDeviceProperties(physicalDevice, properties)
+    //console.log("\nname: " + properties.deviceName);
+    let ver = properties.apiVersion
+    //console.log("vAPI: " + VK_VERSION_MAJOR(ver) + "." + VK_VERSION_MINOR(ver) + "." + VK_VERSION_PATCH(ver));
+  
+    return physicalDevice; //TODO
+  }
+  
+  getQueueFamilyIndex(physicalDevice) {
+    let queueFamilysCount = { $: 0 }
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, queueFamilysCount, null);
+    let queueFamilys = new InitializedArray(VkQueueFamilyProperties, queueFamilysCount.$)
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, queueFamilysCount, queueFamilys);
+  
+    /*
+    for (let i = 0; i < queueFamilysCount.$; i++) {
+      let queue = queueFamilys[i];
+      console.log("queue <" + i + ">");
+      console.log("count       : " + queue.queueCount);
+      console.log("graphic  bit: " + ((queue.queueFlags & VK_QUEUE_GRAPHICS_BIT) ? "true" : "false"));
+      console.log("compute  bit: " + ((queue.queueFlags & VK_QUEUE_COMPUTE_BIT) ? "true" : "false"));
+      console.log("transfer bit: " + ((queue.queueFlags & VK_QUEUE_TRANSFER_BIT) ? "true" : "false"));
+    }
+    */
+  
+    return 0;
+  }
+  
+  getLogicalDevice(physicalDevice, queueFamily) {
+    let deviceQueueInfo = new VkDeviceQueueCreateInfo();
+    deviceQueueInfo.queueFamilyIndex = queueFamily;
+    deviceQueueInfo.queueCount = 1;
+    deviceQueueInfo.pQueuePriorities = new Float32Array([1, 1, 1, 1]);
+  
+    let usedFeatures = new VkPhysicalDeviceFeatures();
+    usedFeatures.wideLines = true;
+    usedFeatures.fillModeNonSolid = true;
+    usedFeatures.largePoints = true;
+  
+    let deviceExtensions = [VK_KHR_SWAPCHAIN_EXTENSION_NAME]
+    let deviceCreateInfo = new VkDeviceCreateInfo();
+    deviceCreateInfo.queueCreateInfoCount = 1;
+    deviceCreateInfo.pQueueCreateInfos = [deviceQueueInfo];
+    deviceCreateInfo.pEnabledFeatures = usedFeatures;
+    deviceCreateInfo.enabledExtensionCount = deviceExtensions.length;
+    deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions;
+  
+  
+    let device = new VkDevice();
+    let result = vkCreateDevice(physicalDevice, deviceCreateInfo, null, device);
+    assertVulkan(result);
+  
+    return device;
+  }
+  
+  getQueue(queueFamily) {
+    this.queue = new VkQueue();
+    vkGetDeviceQueue(this.device, queueFamily, 0, this.queue);
+    return this.queue;
   }
 }

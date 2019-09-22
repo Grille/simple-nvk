@@ -19,6 +19,7 @@ export default class Handle{
     this.handles[id] = handle;
   }
   super_destroy(){
+    vkDeviceWaitIdle(this.device);
     for (let i = this.handles.length - 1; i >= 0; i--) {
       let handle = this.handles[i];
       if (handle !== null && handle.id !== -1) {
