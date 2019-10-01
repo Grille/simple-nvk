@@ -107,6 +107,7 @@ export default class BufferHandle extends Handle {
 
     return buffer;
   }
+  
   copy(srcHandle, offsetSrc, dstHandle, offsetDst, size) {
     copyVkBuffer(this.owner, srcHandle.vksLocal.vkBuffer, offsetSrc, dstHandle.vksLocal.vkBuffer, offsetDst, size);
   }

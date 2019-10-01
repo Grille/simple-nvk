@@ -5,17 +5,17 @@ import pngjs from "pngjs"; const { PNG } = pngjs;
 let width = 800;
 let height = 800;
 let workGroupSize = 32;
-let date = Date.now();
 
 export function main() {
-  print("compute example\n")
-  date = Date.now();
-  print("  vk start...")
-  snvk.startVulkan();
+  console.log("compute example")
+  console.time("start")
 
+  snvk.startVulkan();
   let device = snvk.createDevice();
   
-  time("  vk setup...")
+  console.timeLog("start")
+  console.time("setup")
+
   let compSrc = fs.readFileSync(`./example/compute.comp`);
   let compCreateInfo = {
     source: compSrc,
@@ -30,10 +30,12 @@ export function main() {
   let uniformBufferCreateInfo = {
     size: uniformData.byteLength,
     usage: snvk.BUFFER_USAGE_UNIFORM,
+    staging: snvk.BUFFER_STAGING_STATIC,
   }
   let storageBufferCreateInfo = {
     size: width * height * 4 * 4,
     usage: snvk.BUFFER_USAGE_STORAGE,
+    staging: snvk.BUFFER_STAGING_STATIC,
     readable: true,
   }
 
@@ -63,17 +65,22 @@ export function main() {
 
   command.end();
 
-  time("  vk execute...")
+  console.timeLog("setup")
+  console.time("execute")
+
   let submitInfo = {
     commandBuffer: command,
     blocking: true,
   }
   device.submit(submitInfo);
 
-  time("  vk readback...")
+  console.timeLog("execute")
+  console.time("readback")
+
   let view = new Float32Array(storageBuffer.readData());
 
-  time("  png pack...")
+  console.timeLog("readback")
+  console.time("pack")
   
   let png = new PNG({
     width: width,
@@ -87,20 +94,13 @@ export function main() {
     png.data[ii + 3] = 255 * view[ii + 3];
   };
   
-  time("  png save...")
   png.pack().pipe(fs.createWriteStream("test.png"));
 
-  time("  vk shutdown...")
+  console.timeLog("pack")
+  console.time("shutdown")
+
   snvk.shutdown();
 
-  time("finish.\n")
-}
-
-function print(message) {
-  process.stdout.write(message);
-}
-function time(message) {
-  print(" " + (Date.now() - date) + "ms\n");
-  print(message);
-  date = Date.now();
+  console.timeLog("shutdown")
+  console.log("finish.\n")
 }

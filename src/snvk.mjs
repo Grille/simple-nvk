@@ -33,7 +33,7 @@ export default class SNVK {
 
   createInstance() {
     let validationLayers = ["VK_LAYER_LUNARG_standard_validation", "VK_LAYER_LUNARG_parameter_validation"];
-    let win = new VulkanWindow({width:1,height:1,title:"lol"});
+    let win = new VulkanWindow({ width: 1, height: 1, title: "title" });
     let extensions = [...win.getRequiredInstanceExtensions()];
     win.close();
   
