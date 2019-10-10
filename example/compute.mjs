@@ -55,6 +55,7 @@ export function main() {
   let commandCreateInfo = {
     level: snvk.COMMAND_LEVEL_PRIMARY,
     usage: snvk.COMMAND_USAGE_ONE_TIME,
+    queue: snvk.COMMAND_QUEUE_COMPUTE,
   }
   let command = device.createCommandBuffer(commandCreateInfo);
 

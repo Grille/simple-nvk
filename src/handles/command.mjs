@@ -1,12 +1,19 @@
 import { assertVulkan } from "../utils.mjs"
 import Handle from "./handle.mjs";
+import * as enums from "../snvk-enum.mjs";
 
 export default class CommandBufferHandle extends Handle {
-  constructor(owner, { level, usage }) {
+  constructor(owner, { level, usage, queue = 0 }) {
     super(owner);
 
+    switch (queue) {
+      case enums.COMMAND_QUEUE_COMPUTE: this.commandPool = owner.computePool; break;
+      case enums.COMMAND_QUEUE_TRANSFER: this.commandPool = owner.transferPool; break;
+      default: this.commandPool = owner.commandPool; break;
+    }
+
     let commandBufferAllocateInfo = new VkCommandBufferAllocateInfo();
-    commandBufferAllocateInfo.commandPool = owner.commandPool;
+    commandBufferAllocateInfo.commandPool = this.commandPool;
     commandBufferAllocateInfo.level = level;
     commandBufferAllocateInfo.commandBufferCount = 1;
 
@@ -17,12 +24,13 @@ export default class CommandBufferHandle extends Handle {
     this.vkCommandBuffer = vkCommandBuffer;
     this.level = level;
     this.usage = usage;
+    this.queue = queue;
   }
 
   destroy() {
     this.super_destroy();
     let { owner } = this;
-    vkFreeCommandBuffers(owner.device, owner.commandPool, 1, [this.vkCommandBuffer]);
+    vkFreeCommandBuffers(owner.device, this.commandPool, 1, [this.vkCommandBuffer]);
   }
 
   begin() {
@@ -55,7 +63,7 @@ export default class CommandBufferHandle extends Handle {
     vkCmdBindVertexBuffers(vkCommandBuffer, 0, vertexBuffers.length, vertexBuffers, offsets);
   }
 
-  beginRender(renderPass, frambuffer, backColor) {
+  beginRender(renderPass, frambuffer) {
     let { vkCommandBuffer } = this;
 
     let renderPassBeginInfo = new VkRenderPassBeginInfo();

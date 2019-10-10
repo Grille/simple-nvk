@@ -1,5 +1,6 @@
 import nvk from "nvk";
 import { pushHandle, deleteHandle, InitializedArray, assertVulkan } from "./utils.mjs"
+import * as enums from "./snvk-enum.mjs";
 
 import Handle from "./handles/handle.mjs";
 import BufferHandle from "./handles/buffer.mjs";
@@ -23,23 +24,73 @@ export default class DeviceHandle extends Handle{
     this.instance = owner.instance;
     this.commandPool = owner.commandPool;
 
+    this.renderQueue = null;
+    this.renderPool = null;
+
+    this.transferQueue = null;
+    this.transferPool = null;
+
+    this.computeQueue = null;
+    this.computePool = null;
+
+    this.stagingQueue = null;
+    this.stagingPool = null;
+
+    let result = 0;
+
     this.physicalDevice = this.getPhysicalDevice();
     this.queueFamily = this.getQueueFamilyIndex(this.physicalDevice);
 
-    this.device = this.getLogicalDevice(this.physicalDevice, this.queueFamily);
-    this.queue = this.getQueue(this.queueFamily);
+    let deviceQueueInfo = new VkDeviceQueueCreateInfo();
+    deviceQueueInfo.queueFamilyIndex = 0;
+    deviceQueueInfo.queueCount = 1;
+    deviceQueueInfo.pQueuePriorities = new Float32Array([1]);
+  
+    let transferQueueInfo = new VkDeviceQueueCreateInfo();
+    transferQueueInfo.queueFamilyIndex = 1;
+    transferQueueInfo.queueCount = 1;
+    transferQueueInfo.pQueuePriorities = new Float32Array([1]);
 
-    let commandPoolCreateInfo = new VkCommandPoolCreateInfo();
-    commandPoolCreateInfo.queueFamilyIndex = this.queueFamily;
+    let computeQueueInfo = new VkDeviceQueueCreateInfo();
+    computeQueueInfo.queueFamilyIndex = 2;
+    computeQueueInfo.queueCount = 1;
+    computeQueueInfo.pQueuePriorities = new Float32Array([1]);
 
-    this.commandPool = new VkCommandPool();
-    let result = vkCreateCommandPool(this.device, commandPoolCreateInfo, null, this.commandPool);
+    let usedFeatures = new VkPhysicalDeviceFeatures();
+    usedFeatures.wideLines = true;
+    usedFeatures.fillModeNonSolid = true;
+    usedFeatures.largePoints = true;
+  
+    let queueCreateInfos = [deviceQueueInfo, transferQueueInfo, computeQueueInfo];
+    let deviceExtensions = [VK_KHR_SWAPCHAIN_EXTENSION_NAME]
+    let deviceCreateInfo = new VkDeviceCreateInfo();
+    deviceCreateInfo.queueCreateInfoCount = queueCreateInfos.length;
+    deviceCreateInfo.pQueueCreateInfos = queueCreateInfos;
+    deviceCreateInfo.pEnabledFeatures = usedFeatures;
+    deviceCreateInfo.enabledExtensionCount = deviceExtensions.length;
+    deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions;
+  
+    this.device = new VkDevice();
+    result = vkCreateDevice(this.physicalDevice, deviceCreateInfo, null, this.device);
     assertVulkan(result);
+
+
+
+    this.commandPool = createVkCommandPool(this.device, 0);
+    this.queue = this.getQueue(0);
+
+    this.transferPool = createVkCommandPool(this.device, 1);
+    this.transferQueue = this.getQueue(1);
+
+    this.computePool = createVkCommandPool(this.device, 2);
+    this.computeQueue = this.getQueue(2);
   }
 
   destroy() {
     this.super_destroy();
     vkDestroyCommandPool(this.device, this.commandPool, null);
+    vkDestroyCommandPool(this.device, this.transferPool, null);
+    vkDestroyCommandPool(this.device, this.computePool, null);
     vkDestroyDevice(this.device, null);
   }
 
@@ -80,7 +131,7 @@ export default class DeviceHandle extends Handle{
   }
 
   submit(submitInfo) {
-    let { commandBuffer, waitSemaphore = null, signalSemaphore = null, signalFence = {}, blocking = false } = submitInfo;
+    let { commandBuffer, waitSemaphore = null, signalSemaphore = null, signalFence = {}, blocking = false} = submitInfo;
     let { vkFence = null } = signalFence;
   
     let vkSubmitInfo = new VkSubmitInfo();
@@ -95,17 +146,24 @@ export default class DeviceHandle extends Handle{
       vkSubmitInfo.signalSemaphoreCount = 1;
       vkSubmitInfo.pSignalSemaphores = [signalSemaphore.vkSemaphore];
     }
-  
+
+    let queue = null;
+    switch (commandBuffer.queue) {
+      case enums.COMMAND_QUEUE_COMPUTE: queue = this.computeQueue; break;
+      case enums.COMMAND_QUEUE_TRANSFER: queue = this.transferQueue; break;
+      default: queue = this.queue; break;
+    }
+
     if (blocking) {
       let fence = this.createFence();
     
-      let result = vkQueueSubmit(this.queue, 1, [vkSubmitInfo], fence.vkFence);
+      let result = vkQueueSubmit(queue, 1, [vkSubmitInfo], fence.vkFence);
       assertVulkan(result);
       fence.wait(60 * 1E3);
       fence.destroy();
     }
     else {
-      let result = vkQueueSubmit(this.queue, 1, [vkSubmitInfo], vkFence);
+      let result = vkQueueSubmit(queue, 1, [vkSubmitInfo], vkFence);
       assertVulkan(result);
     }
   }
@@ -155,8 +213,7 @@ export default class DeviceHandle extends Handle{
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, queueFamilysCount, null);
     let queueFamilys = new InitializedArray(VkQueueFamilyProperties, queueFamilysCount.$)
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, queueFamilysCount, queueFamilys);
-  
-    /*
+  /*
     for (let i = 0; i < queueFamilysCount.$; i++) {
       let queue = queueFamilys[i];
       console.log("queue <" + i + ">");
@@ -165,41 +222,24 @@ export default class DeviceHandle extends Handle{
       console.log("compute  bit: " + ((queue.queueFlags & VK_QUEUE_COMPUTE_BIT) ? "true" : "false"));
       console.log("transfer bit: " + ((queue.queueFlags & VK_QUEUE_TRANSFER_BIT) ? "true" : "false"));
     }
-    */
-  
+  */
     return 0;
   }
   
-  getLogicalDevice(physicalDevice, queueFamily) {
-    let deviceQueueInfo = new VkDeviceQueueCreateInfo();
-    deviceQueueInfo.queueFamilyIndex = queueFamily;
-    deviceQueueInfo.queueCount = 1;
-    deviceQueueInfo.pQueuePriorities = new Float32Array([1, 1, 1, 1]);
-  
-    let usedFeatures = new VkPhysicalDeviceFeatures();
-    usedFeatures.wideLines = true;
-    usedFeatures.fillModeNonSolid = true;
-    usedFeatures.largePoints = true;
-  
-    let deviceExtensions = [VK_KHR_SWAPCHAIN_EXTENSION_NAME]
-    let deviceCreateInfo = new VkDeviceCreateInfo();
-    deviceCreateInfo.queueCreateInfoCount = 1;
-    deviceCreateInfo.pQueueCreateInfos = [deviceQueueInfo];
-    deviceCreateInfo.pEnabledFeatures = usedFeatures;
-    deviceCreateInfo.enabledExtensionCount = deviceExtensions.length;
-    deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions;
-  
-  
-    let device = new VkDevice();
-    let result = vkCreateDevice(physicalDevice, deviceCreateInfo, null, device);
-    assertVulkan(result);
-  
-    return device;
-  }
-  
   getQueue(queueFamily) {
-    this.queue = new VkQueue();
-    vkGetDeviceQueue(this.device, queueFamily, 0, this.queue);
-    return this.queue;
+    let queue = new VkQueue();
+    vkGetDeviceQueue(this.device, queueFamily, 0, queue);
+    return queue;
   }
+}
+
+function createVkCommandPool(device, queueFamily) {
+  let commandPoolCreateInfo = new VkCommandPoolCreateInfo();
+  commandPoolCreateInfo.queueFamilyIndex = queueFamily;
+
+  let commandPool = new VkCommandPool();
+  let result = vkCreateCommandPool(device, commandPoolCreateInfo, null, commandPool);
+  assertVulkan(result);
+
+  return commandPool;
 }

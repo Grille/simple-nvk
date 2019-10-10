@@ -1,7 +1,7 @@
 import { assertVulkan } from "../utils.mjs";
 import Handle from "./handle.mjs";
 import nvk from "nvk";
-import snvk from "../index.mjs";
+import * as enums from "../snvk-enum.mjs";
 
 class BindingObj {
   constructor(bufferHandle, binding, stride) {
@@ -25,13 +25,13 @@ class DescriptorObj {
 }
 
 export default class BufferHandle extends Handle {
-  constructor(owner, { size, usage, staging = snvk.BUFFER_STAGING_DYNAMIC, readable = false }) {
+  constructor(owner, { size, usage, staging = enums.BUFFER_STAGING_DYNAMIC, readable = false }) {
     super(owner);
 
     let vkUsageBits = getVkBufferUsageBits(this.owner, usage, readable);
 
     let hostBuffer = null;
-    if (staging === snvk.BUFFER_STAGING_STATIC) {
+    if (staging === enums.BUFFER_STAGING_STATIC) {
       hostBuffer = createVkHostBuffer(this.owner, size, vkUsageBits.host);
     }
     let localBuffer = createVkBuffer(this.owner,
@@ -53,7 +53,7 @@ export default class BufferHandle extends Handle {
   destroy() {
     this.super_destroy();
     let { owner } = this;
-    if (this.staging === snvk.BUFFER_STAGING_STATIC) {
+    if (this.staging === enums.BUFFER_STAGING_STATIC) {
       destroyVkBuffer(owner, this.vksHost);
     }
     destroyVkBuffer(owner, this.vksLocal);
@@ -64,7 +64,7 @@ export default class BufferHandle extends Handle {
     if (length === null) length = data.buffer.size;
 
     let offsetHost = offsetDst;
-    if (this.staging === snvk.BUFFER_STAGING_DYNAMIC) {
+    if (this.staging === enums.BUFFER_STAGING_DYNAMIC) {
       this.vksHost = createVkHostBuffer(this.owner, length, this.vkUsageBits.host);
       offsetHost = 0;
     }
@@ -80,7 +80,7 @@ export default class BufferHandle extends Handle {
 
     copyVkBuffer(this.owner, this.vksHost.vkBuffer, offsetHost, this.vksLocal.vkBuffer, offsetDst, length);
 
-    if (this.staging === snvk.BUFFER_STAGING_DYNAMIC) {
+    if (this.staging === enums.BUFFER_STAGING_DYNAMIC) {
       destroyVkBuffer(this.owner, this.vksHost);
     }
   }
@@ -89,7 +89,7 @@ export default class BufferHandle extends Handle {
     if (length === null) length = this.size;
 
     let offsetHost = offset;
-    if (this.staging === snvk.BUFFER_STAGING_DYNAMIC) {
+    if (this.staging === enums.BUFFER_STAGING_DYNAMIC) {
       this.vksHost = createVkHostBuffer(this.owner, length, this.vkUsageBits.host);
       offsetHost = 0;
     }
@@ -101,7 +101,7 @@ export default class BufferHandle extends Handle {
 
     let buffer = ArrayBuffer.fromAddress(dataPtr.$, length);
 
-    if (this.staging === snvk.BUFFER_STAGING_DYNAMIC) {
+    if (this.staging === enums.BUFFER_STAGING_DYNAMIC) {
       destroyVkBuffer(this.owner, this.vksHost);
     }
 
@@ -131,8 +131,9 @@ function createVkHostBuffer(owner, size, bufferUsageFlags) {
 
 function copyVkBuffer(owner, src, offsetSrc, dst, offsetDst, size) {
   let commandCreateInfo = {
-    level: snvk.COMMAND_LEVEL_PRIMARY,
-    usage: snvk.COMMAND_USAGE_ONE_TIME,
+    level: enums.COMMAND_LEVEL_PRIMARY,
+    usage: enums.COMMAND_USAGE_ONE_TIME,
+    queue: enums.COMMAND_QUEUE_TRANSFER,
   }
   let command = owner.createCommandBuffer(commandCreateInfo);
 
@@ -149,7 +150,7 @@ function copyVkBuffer(owner, src, offsetSrc, dst, offsetDst, size) {
 
   let submitInfo = {
     commandBuffer: command,
-    blocking: true,
+    blocking: false,
   }
   owner.submit(submitInfo);
 
@@ -204,9 +205,9 @@ function getVkFormat(owner, size, vec, type) {
     case 4: enumName += `R${size}G${size}B${size}A${size}`; break;
   }
   switch (type) {
-    case snvk.UINT: enumName += `_UINT`; break;
-    case snvk.INT: enumName += `_SINT`; break;
-    case snvk.FLOAT: enumName += `_SFLOAT`; break;
+    case enums.UINT: enumName += `_UINT`; break;
+    case enums.INT: enumName += `_SINT`; break;
+    case enums.FLOAT: enumName += `_SFLOAT`; break;
   }
   return nvk[enumName];
 }
