@@ -6,8 +6,8 @@
     "start": "node --experimental-modules ./example/program.mjs"
   },
   "dependencies": {
-    "nvk": "latest",
-    "nvk-essentials": "latest"
+    "nvk": "^0.7.3",
+    "nvk-essentials": "^0.1.2"
   },
   "devDependencies": {
     "pngjs": "^3.3.3",
