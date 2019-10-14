@@ -1,7 +1,7 @@
 {
   "main": "src/index.mjs",
   "name": "simple-nvk",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "scripts": {
     "start": "node --experimental-modules ./example/program.mjs"
   },
