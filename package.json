@@ -6,7 +6,7 @@
     "start": "node --experimental-modules ./example/program.mjs"
   },
   "dependencies": {
-    "nvk": "^0.7.3",
+    "nvk": "^0.7.4",
     "nvk-essentials": "^0.1.2"
   },
   "devDependencies": {

@@ -17,11 +17,11 @@ export default class ShaderHandle extends Handle {
         case snvk.SHADER_STAGE_COMPUTE: extension = "comp"; break;
         case snvk.SHADER_STAGE_GEOMETRY: extension = "geom"; break;
       }
-      let spirvCode = GLSL.toSPIRVSync({
+      let { output, error } = GLSL.toSPIRVSync({
         source: source,
         extension: extension
-      }).output;
-      byteCode = new Uint8Array(spirvCode);
+      });
+      byteCode = new Uint8Array(output);
     }
     else {
       byteCode = new Uint8Array(source);

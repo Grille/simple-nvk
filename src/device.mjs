@@ -201,9 +201,9 @@ export default class DeviceHandle extends Handle{
     let physicalDevice = physDevices[0];
     let properties = new VkPhysicalDeviceProperties();
     vkGetPhysicalDeviceProperties(physicalDevice, properties)
-    //console.log("\nname: " + properties.deviceName);
+    console.log("\nname: " + properties.deviceName);
     let ver = properties.apiVersion
-    //console.log("vAPI: " + VK_VERSION_MAJOR(ver) + "." + VK_VERSION_MINOR(ver) + "." + VK_VERSION_PATCH(ver));
+    console.log("vAPI: " + VK_VERSION_MAJOR(ver) + "." + VK_VERSION_MINOR(ver) + "." + VK_VERSION_PATCH(ver));
   
     return physicalDevice; //TODO
   }

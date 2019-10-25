@@ -32,17 +32,17 @@ export default class SNVK {
   }
 
   createInstance() {
-    let validationLayers = ["VK_LAYER_LUNARG_standard_validation", "VK_LAYER_LUNARG_parameter_validation"];
+    let validationLayers = ["VK_LAYER_LUNARG_standard_validation"];
     let win = new VulkanWindow({ width: 1, height: 1, title: "title" });
     let extensions = [...win.getRequiredInstanceExtensions()];
     win.close();
   
     let appInfo = new VkApplicationInfo();
     appInfo.pApplicationName = "NVK Mandelbrot";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+    appInfo.applicationVersion = VK_MAKE_VERSION(1, 1, 1);
     appInfo.pEngineName = "engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
+    appInfo.engineVersion = VK_MAKE_VERSION(1, 1, 1);
+    appInfo.apiVersion = VK_API_VERSION_1_1;
   
     let instanceInfo = new VkInstanceCreateInfo();
     instanceInfo.pApplicationinfo = appInfo;
