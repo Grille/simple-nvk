@@ -39,13 +39,13 @@ export default class SNVK {
   
     let appInfo = new VkApplicationInfo();
     appInfo.pApplicationName = "NVK Mandelbrot";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 1, 1);
+    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 1, 1);
+    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion = VK_API_VERSION_1_1;
-  
+
     let instanceInfo = new VkInstanceCreateInfo();
-    instanceInfo.pApplicationinfo = appInfo;
+    instanceInfo.pApplicationInfo = appInfo;
     instanceInfo.enabledLayerCount = validationLayers.length;
     instanceInfo.ppEnabledLayerNames = validationLayers;
     instanceInfo.enabledExtensionCount = extensions.length;
